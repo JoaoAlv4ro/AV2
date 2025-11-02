@@ -4,14 +4,14 @@ import { PlusIcon } from "@phosphor-icons/react";
 function DashboardAeronaves() {
     const navigate = useNavigate();
 
-    const aeronaveClick = (aeronaveId) => {
-        navigate(`../aeronave/${aeronaveId}`)
+    const aeronaveClick = (aeronave) => {
+        navigate(`../aeronave/${aeronave.id}`)
     };
 
     // Mock data das aeronaves
     const aeronaves = [
         {
-            id: 'caca-f39-gripen',
+            id: '007',
             nome: 'Caça F-39 Gripen',
             tipo: 'Militar',
             alcance: '4.000km',
@@ -19,7 +19,7 @@ function DashboardAeronaves() {
             quantidadePecas: 14
         },
         {
-            id: 'boeing-747',
+            id: '747',
             nome: 'Boeing 747',
             tipo: 'Comercial',
             alcance: '13.450km',
@@ -27,7 +27,7 @@ function DashboardAeronaves() {
             quantidadePecas: 14
         },
         {
-            id: 'boeing-747',
+            id: '747',
             nome: 'Boeing 747',
             tipo: 'Comercial',
             alcance: '13.450km',
@@ -54,7 +54,7 @@ function DashboardAeronaves() {
                     <div 
                         key={aeronave.id}
                         className="bg-zinc-100 rounded-lg shadow-sm border border-zinc-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => aeronaveClick(aeronave.id)}
+                        onClick={() => aeronaveClick(aeronave)}
                     >
                         {/* Cabeçalho do Card */}
                         <div className="flex justify-between items-start mb-4">
