@@ -1,10 +1,13 @@
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
+
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { SidebarProvider } from './contexts/SidebarContext.tsx';
+
 import './index.css'
 
-// import Login from './pages/Login.tsx';
+import Login from './pages/Login.tsx';
 
-import { SidebarProvider } from './contexts/SidebarContext.tsx';
 import { AeronaveProvider } from './contexts/data/AeronaveContext.tsx';
 import HomeLayout from './components/HomeLayout.tsx';
 import AeronaveLayout from './components/AeronaveLayout.tsx';
@@ -20,7 +23,7 @@ import GerenciaTestes from './pages/aeronave/GerenciaTestes.tsx';
 
 const router = createBrowserRouter([
   { path: '*', element: <div>404 Not Found</div> },
-  // { path: '/', element: <Login /> },
+  { path: '/', element: <Login /> },
   { 
     path: '/home',
     element: <HomeLayout />,
@@ -45,9 +48,11 @@ const router = createBrowserRouter([
 const root = document.getElementById('root');
 
 createRoot(root!).render(
-  <AeronaveProvider>
-    <SidebarProvider>
-      <RouterProvider router={router} />
-    </SidebarProvider>
-  </AeronaveProvider>
+  <AuthProvider>
+    <AeronaveProvider>
+      <SidebarProvider>
+        <RouterProvider router={router} />
+      </SidebarProvider>
+    </AeronaveProvider>
+  </AuthProvider>
 );
