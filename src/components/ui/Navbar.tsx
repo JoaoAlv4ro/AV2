@@ -1,19 +1,24 @@
 import { SidebarIcon, HouseIcon, GearSixIcon } from "@phosphor-icons/react";
+import { useNavigate } from "react-router";
+import { useSidebar } from "../../contexts/SidebarContext";
 
 interface NavbarProps {
     aeronaveModelo?: string;
 }
 
 function Navbar({ aeronaveModelo }: NavbarProps) {
+    const navigate = useNavigate();
+    const { toggle } = useSidebar();
+
     return (
         <nav className="w-full border-b border-zinc-400 px-4 py-3 flex items-center">
             <div className="flex items-center justify-between w-full">
                 {/* Sidebar Toggle e Home Button */}
                 <div className="flex gap-3 items-center">
-                    <button className="rounded-sm cursor-pointer" onClick={() => null}>
+                    <button className="rounded-sm cursor-pointer" onClick={toggle} title="Toggle Sidebar">
                         <SidebarIcon size={32} weight="fill" className="hover:bg-zinc-200 rounded-sm p-1" />
                     </button>
-                    <button className="flex items-center gap-2 cursor-pointer" onClick={() => null}>
+                    <button className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
                         <HouseIcon size={32} weight="fill" className="bg-zinc-300 rounded-sm p-1 hover:bg-zinc-200" />
                         <h3 className="font-semibold text-2xl">Home</h3>
                     </button>

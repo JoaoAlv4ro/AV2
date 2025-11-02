@@ -8,7 +8,7 @@ interface SidebarProps {
 function Sidebar({ aeronaveModelo }: SidebarProps) {
     // Sidebar Home (Sem aeronave selecionada)
     const HomeSidebar = () => (
-        <aside className="w-full h-full max-w-56 border-r border-zinc-400 flex flex-col justify-between px-4 py-3">
+        <aside className="w-64 h-full border-r border-zinc-400 flex flex-col justify-between px-4 py-3 flex-shrink-0">
             {/* Itens do Menu Home */}
             <div className="flex flex-col gap-1">
                 <button className="flex items-center gap-3 p-0.5 rounded-lg hover:bg-zinc-200 w-full cursor-pointer" onClick={() => null}>
@@ -35,7 +35,7 @@ function Sidebar({ aeronaveModelo }: SidebarProps) {
 
     // Sidebar Aeronave Selecionada
     const AeronaveSidebar = () => (
-        <aside className="w-full h-full max-w-56 border-r border-zinc-400 flex flex-col justify-between px-4 py-3">
+        <aside className="w-64 h-full border-r border-zinc-400 flex flex-col justify-between px-4 py-3 flex-shrink-0">
             {/* Itens do Menu Home */}
             <div className="flex flex-col gap-1">
                 <button className="flex items-center gap-3 p-0.5 rounded-lg hover:bg-zinc-200 w-full cursor-pointer" onClick={() => null}>

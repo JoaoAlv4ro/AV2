@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import './index.css'
 
+import { SidebarProvider } from './contexts/SidebarContext.tsx';
 import HomeLayout from './components/HomeLayout.tsx';
 import AeronaveLayout from './components/AeronaveLayout.tsx';
 
@@ -31,5 +32,7 @@ const router = createBrowserRouter([
 const root = document.getElementById('root');
 
 createRoot(root!).render(
-  <RouterProvider router={router} />
+  <SidebarProvider>
+    <RouterProvider router={router} />
+  </SidebarProvider>
 );
