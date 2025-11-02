@@ -5,6 +5,7 @@ import './index.css'
 // import Login from './pages/Login.tsx';
 
 import { SidebarProvider } from './contexts/SidebarContext.tsx';
+import { AeronaveProvider } from './contexts/data/AeronaveContext.tsx';
 import HomeLayout from './components/HomeLayout.tsx';
 import AeronaveLayout from './components/AeronaveLayout.tsx';
 
@@ -44,7 +45,9 @@ const router = createBrowserRouter([
 const root = document.getElementById('root');
 
 createRoot(root!).render(
-  <SidebarProvider>
-    <RouterProvider router={router} />
-  </SidebarProvider>
+  <AeronaveProvider>
+    <SidebarProvider>
+      <RouterProvider router={router} />
+    </SidebarProvider>
+  </AeronaveProvider>
 );
