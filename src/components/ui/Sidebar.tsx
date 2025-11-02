@@ -50,7 +50,7 @@ function Sidebar({ aeronaveModelo }: SidebarProps) {
             
             {/* Logotipo */}
             <div className="flex flex-col items-center gap-2 mt-4">
-                <div className="w-full h-[1px] bg-zinc-400" />
+                <div className="w-full h-px bg-zinc-400" />
                 <h1 className="font-extrabold text-2xl">AEROCODE</h1>
             </div>
         </aside>
@@ -81,7 +81,7 @@ function Sidebar({ aeronaveModelo }: SidebarProps) {
             
             {/* Logotipo */}
             <div className="flex flex-col items-center gap-2 mt-4">
-                <div className="w-full h-[1px] bg-zinc-400" />
+                <div className="w-full h-px bg-zinc-400" />
                 <h1 className="font-extrabold text-2xl">AEROCODE</h1>
             </div>
         </aside>

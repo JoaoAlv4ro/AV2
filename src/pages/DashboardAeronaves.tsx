@@ -42,7 +42,7 @@ function DashboardAeronaves() {
         <>
             <div className="w-full flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-semibold">Aeronaves</h2>
-                <button className="flex bg-blue-500 text-white px-4 py-2 rounded gap-2.5 items-center font-semibold hover:bg-blue-600 cursor-pointer">
+                <button className="flex bg-blue-500 text-white p-4  rounded gap-2.5 items-center font-semibold hover:bg-blue-600 cursor-pointer">
                     <PlusIcon size={24} weight="bold" />
                     Adicionar Aeronave
                 </button>
