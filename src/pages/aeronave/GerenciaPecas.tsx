@@ -3,48 +3,33 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
-
-type TipoPeca = 'NACIONAL' | 'IMPORTADA';
-type StatusPeca = 'EM_PRODUCAO' | 'EM_TRANSPORTE' | 'PRONTA';
-
-type PecaItem = {
-    codigo: string;
-    nome: string;
-    tipo: TipoPeca;
-    fornecedor: string;
-    status: StatusPeca;
-};
-
-const statusToLabel: Record<StatusPeca, string> = {
-    EM_PRODUCAO: 'Em Produção',
-    EM_TRANSPORTE: 'Em Transporte',
-    PRONTA: 'Pronta',
-};
+import type { Peca } from '../../types';
+import { StatusPeca, TipoPeca } from '../../types/enums';
 
 function GerenciaPecas() {
     const { aeronaveId } = useParams();
     const { getAeronaveById, updateAeronave } = useAeronaves();
     const aeronave = getAeronaveById(aeronaveId || '');
 
-    const pecas = useMemo(() => (aeronave?.pecas ?? []) as unknown as PecaItem[], [aeronave]);
+    const pecas = useMemo(() => (aeronave?.pecas ?? []) as Peca[], [aeronave]);
 
     const [query, setQuery] = useState('');
     const [statusFiltro, setStatusFiltro] = useState<StatusPeca | 'TODOS'>('TODOS');
 
     const [formOpen, setFormOpen] = useState(false);
     const [editCodigo, setEditCodigo] = useState<string | null>(null);
-    const [form, setForm] = useState<PecaItem>({ codigo: '', nome: '', tipo: 'NACIONAL', fornecedor: '', status: 'EM_PRODUCAO' });
+    const [form, setForm] = useState<Peca>({ codigo: '', nome: '', tipo: TipoPeca.NACIONAL, fornecedor: '', status: StatusPeca.EM_PRODUCAO });
 
     const resetForm = () => {
         setEditCodigo(null);
-        setForm({ codigo: '', nome: '', tipo: 'NACIONAL', fornecedor: '', status: 'EM_PRODUCAO' });
+    setForm({ codigo: '', nome: '', tipo: TipoPeca.NACIONAL, fornecedor: '', status: StatusPeca.EM_PRODUCAO });
     };
 
     const stats = useMemo(() => {
         const total = pecas.length;
-        const emProducao = pecas.filter(p => p.status === 'EM_PRODUCAO').length;
-        const emTransporte = pecas.filter(p => p.status === 'EM_TRANSPORTE').length;
-        const prontas = pecas.filter(p => p.status === 'PRONTA').length;
+        const emProducao = pecas.filter(p => p.status === StatusPeca.EM_PRODUCAO).length;
+        const emTransporte = pecas.filter(p => p.status === StatusPeca.EM_TRANSPORTE).length;
+        const prontas = pecas.filter(p => p.status === StatusPeca.PRONTA).length;
         return { total, emProducao, emTransporte, prontas };
     }, [pecas]);
 
@@ -80,7 +65,7 @@ function GerenciaPecas() {
     const salvar = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const payload = { ...form, codigo: form.codigo.trim(), nome: form.nome.trim(), fornecedor: form.fornecedor.trim() };
-        let novas: PecaItem[];
+        let novas: Peca[];
         if (editCodigo) {
             novas = pecas.map(p => p.codigo === editCodigo ? payload : p);
         } else {
@@ -139,14 +124,14 @@ function GerenciaPecas() {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <select id="peca-status" className="h-full p-2 rounded border border-zinc-300 bg-white"
+                    <select id="peca-status" className="h-full p-2 rounded border border-zinc-300 bg-white cursor-pointer"
                         value={statusFiltro}
                         onChange={(e) => setStatusFiltro(e.target.value as StatusPeca | 'TODOS')}
                     >
                         <option value="TODOS">Todos</option>
-                        <option value="EM_PRODUCAO">Em Produção</option>
-                        <option value="EM_TRANSPORTE">Em Transporte</option>
-                        <option value="PRONTA">Pronta</option>
+                        <option value={StatusPeca.EM_PRODUCAO}>Em Produção</option>
+                        <option value={StatusPeca.EM_TRANSPORTE}>Em Transporte</option>
+                        <option value={StatusPeca.PRONTA}>Pronta</option>
                     </select>
                 </div>
             </div>
@@ -169,9 +154,9 @@ function GerenciaPecas() {
                             <tr key={p.codigo} className="border-t border-zinc-200 hover:bg-zinc-50">
                                 <td className="px-4 py-2 font-medium">{p.codigo}</td>
                                 <td className="px-4 py-2">{p.nome}</td>
-                                <td className="px-4 py-2">{p.tipo === 'IMPORTADA' ? 'Importada' : 'Nacional'}</td>
+                                <td className="px-4 py-2">{p.tipo}</td>
                                 <td className="px-4 py-2">{p.fornecedor}</td>
-                                <td className="px-4 py-2">{statusToLabel[p.status]}</td>
+                                <td className="px-4 py-2">{p.status}</td>
                                 <td className="px-4 py-2">
                                     <div className="flex gap-2 justify-end">
                                         <button onClick={() => abrirEdicao(p.codigo)}
@@ -218,8 +203,8 @@ function GerenciaPecas() {
                         <select id="pc-tipo" className="p-2 rounded border border-zinc-300 bg-white"
                             value={form.tipo} onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoPeca }))}
                         >
-                            <option value="NACIONAL">Nacional</option>
-                            <option value="IMPORTADA">Importada</option>
+                            <option value={TipoPeca.NACIONAL}>Nacional</option>
+                            <option value={TipoPeca.IMPORTADA}>Importada</option>
                         </select>
                     </div>
                     <div className="col-span-2 flex flex-col gap-1">
@@ -227,14 +212,14 @@ function GerenciaPecas() {
                         <select id="pc-status" className="p-2 rounded border border-zinc-300 bg-white"
                             value={form.status} onChange={(e) => setForm(v => ({ ...v, status: e.target.value as StatusPeca }))}
                         >
-                            <option value="EM_PRODUCAO">Em Produção</option>
-                            <option value="EM_TRANSPORTE">Em Transporte</option>
-                            <option value="PRONTA">Pronta</option>
+                            <option value={StatusPeca.EM_PRODUCAO}>Em Produção</option>
+                            <option value={StatusPeca.EM_TRANSPORTE}>Em Transporte</option>
+                            <option value={StatusPeca.PRONTA}>Pronta</option>
                         </select>
                     </div>
                     <div className="col-span-6 flex justify-end gap-2 mt-2">
-                        <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">
+                        <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
                             {editCodigo ? 'Salvar alterações' : 'Cadastrar Peça'}
                         </button>
                     </div>
