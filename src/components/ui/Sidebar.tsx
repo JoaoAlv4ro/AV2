@@ -61,19 +61,19 @@ function Sidebar({ aeronaveModelo }: SidebarProps) {
         <aside className="w-64 h-full border-r border-zinc-400 flex flex-col justify-between px-4 py-3 shrink-0">
             {/* Itens do Menu Home */}
             <div className="flex flex-col gap-1">
-                <button className={getButtonClass('/aeronave')} onClick={() => navigate('/aeronave/:aeronaveid')}>
+                <button className={getButtonClass('/aeronave')} onClick={() => navigate(`/aeronave/${aeronaveModelo}`)}>
                     <AirplaneTiltIcon size={24} weight={isActive('/aeronave') ? "fill" : "regular"} />
                     <span className="font-regular text-lg">Aeronave</span>
                 </button>
-                <button className={getButtonClass('/aeronave/etapas')} onClick={() => navigate('/aeronave/:aeronaveid/etapas')}>
+                <button className={getButtonClass('/aeronave/etapas')} onClick={() => navigate(`/aeronave/${aeronaveModelo}/etapas`)}>
                     <FactoryIcon size={24} weight={isActive('/aeronave/etapas') ? "fill" : "regular"} />
                     <span className="font-regular text-lg">Etapas</span>
                 </button>
-                <button className={getButtonClass('/aeronave/pecas')} onClick={() => navigate('/aeronave/:aeronaveid/pecas')}>
+                <button className={getButtonClass('/aeronave/pecas')} onClick={() => navigate(`/aeronave/${aeronaveModelo}/pecas`)}>
                     <PuzzlePieceIcon size={24} weight={isActive('/aeronave/pecas') ? "fill" : "regular"} />
                     <span className="font-regular text-lg">Peças</span>
                 </button>
-                <button className={getButtonClass('/aeronave/testes')} onClick={() => navigate('/aeronave/:aeronaveid/testes')}>
+                <button className={getButtonClass('/aeronave/testes')} onClick={() => navigate(`/aeronave/${aeronaveModelo}/testes`)}>
                     <TestTubeIcon size={24} weight={isActive('/aeronave/testes') ? "fill" : "regular"} />
                     <span className="font-regular text-lg">Testes</span>
                 </button>
