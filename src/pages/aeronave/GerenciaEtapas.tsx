@@ -3,16 +3,17 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { StatusEtapa } from '../../types/enums';
+import type { Etapa } from '../../types';
 
-type StatusEtapa = 'PENDENTE' | 'ANDAMENTO' | 'CONCLUIDA';
 type AssocFuncionario = { id?: string; nome?: string };
 type EtapaItem = { id: string; nome: string; prazo: string; status: StatusEtapa; funcionarios: AssocFuncionario[] };
 
 function badge(status: StatusEtapa) {
     switch (status) {
-        case 'PENDENTE': return 'bg-zinc-200 text-zinc-700 border border-zinc-300';
-        case 'ANDAMENTO': return 'bg-amber-100 text-amber-800 border border-amber-300';
-        case 'CONCLUIDA': return 'bg-green-100 text-green-800 border border-green-300';
+        case StatusEtapa.PENDENTE: return 'bg-zinc-200 text-zinc-700 border border-zinc-300';
+        case StatusEtapa.ANDAMENTO: return 'bg-amber-100 text-amber-800 border border-amber-300';
+        case StatusEtapa.CONCLUIDA: return 'bg-green-100 text-green-800 border border-green-300';
     }
 }
 
@@ -27,20 +28,20 @@ function GerenciaEtapas() {
 
     const [novo, setNovo] = useState<{ nome: string; prazo: string }>({ nome: '', prazo: '' });
 
-        const etapas = useMemo(() => (aeronave?.etapas ?? []) as unknown as EtapaItem[], [aeronave]);
+    const etapas = useMemo(() => (aeronave?.etapas ?? []) as Etapa[], [aeronave]);
 
     const stats = useMemo(() => {
         const total = etapas.length;
-        const pendentes = etapas.filter(e => e.status === 'PENDENTE').length;
-        const progresso = etapas.filter(e => e.status === 'ANDAMENTO').length;
-        const concluidas = etapas.filter(e => e.status === 'CONCLUIDA').length;
+        const pendentes = etapas.filter(e => e.status === StatusEtapa.PENDENTE).length;
+        const progresso = etapas.filter(e => e.status === StatusEtapa.ANDAMENTO).length;
+        const concluidas = etapas.filter(e => e.status === StatusEtapa.CONCLUIDA).length;
         return { total, pendentes, progresso, concluidas };
     }, [etapas]);
 
     const porStatus = useMemo(() => ({
-        PENDENTE: etapas.filter(e => e.status === 'PENDENTE'),
-        ANDAMENTO: etapas.filter(e => e.status === 'ANDAMENTO'),
-        CONCLUIDA: etapas.filter(e => e.status === 'CONCLUIDA'),
+        PENDENTE: etapas.filter(e => e.status === StatusEtapa.PENDENTE),
+        ANDAMENTO: etapas.filter(e => e.status === StatusEtapa.ANDAMENTO),
+        CONCLUIDA: etapas.filter(e => e.status === StatusEtapa.CONCLUIDA),
     }), [etapas]);
 
     if (!aeronave) {
@@ -52,7 +53,7 @@ function GerenciaEtapas() {
     const criarEtapa = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const id = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now());
-        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: 'PENDENTE', funcionarios: [] };
+        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: StatusEtapa.PENDENTE, funcionarios: [] };
         await updateAeronave(aeronave.codigo, { etapas: [...etapas, nova] } as any);
         setNovo({ nome: '', prazo: '' });
         setNovoOpen(false);
@@ -145,9 +146,9 @@ function GerenciaEtapas() {
 
             {/* Kanban */}
             <div className="flex gap-4">
-                <Coluna titulo="Pendente" status="PENDENTE" itens={porStatus.PENDENTE} />
-                <Coluna titulo="Em Andamento" status="ANDAMENTO" itens={porStatus.ANDAMENTO} />
-                <Coluna titulo="Concluída" status="CONCLUIDA" itens={porStatus.CONCLUIDA} />
+                <Coluna titulo="Pendente" status={StatusEtapa.PENDENTE} itens={porStatus.PENDENTE as unknown as EtapaItem[]} />
+                <Coluna titulo="Em Andamento" status={StatusEtapa.ANDAMENTO} itens={porStatus.ANDAMENTO as unknown as EtapaItem[]} />
+                <Coluna titulo="Concluída" status={StatusEtapa.CONCLUIDA} itens={porStatus.CONCLUIDA as unknown as EtapaItem[]} />
             </div>
 
             {/* Modal Nova Etapa */}
@@ -188,7 +189,7 @@ function GerenciaEtapas() {
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-semibold">{selecionada.nome}</h3>
                                 <span className={`text-xs px-2 py-1 rounded ${badge(selecionada.status)}`}>{
-                                    selecionada.status === 'PENDENTE' ? 'Pendente' : selecionada.status === 'ANDAMENTO' ? 'Em Andamento' : 'Concluída'
+                                    selecionada.status === StatusEtapa.PENDENTE ? 'Pendente' : selecionada.status === StatusEtapa.ANDAMENTO ? 'Em Andamento' : 'Concluída'
                                 }</span>
                             </div>
                             <button aria-label="Fechar" onClick={() => setModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -214,9 +215,9 @@ function GerenciaEtapas() {
                                 <select id="md-status" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer"
                                     value={selecionada.status}
                                     onChange={(e) => setSelecionada(s => s ? { ...s, status: e.target.value as StatusEtapa } : s)}>
-                                    <option value="PENDENTE">Pendente</option>
-                                    <option value="ANDAMENTO">Em Andamento</option>
-                                    <option value="CONCLUIDA">Concluída</option>
+                                    <option value={StatusEtapa.PENDENTE}>Pendente</option>
+                                    <option value={StatusEtapa.ANDAMENTO}>Em Andamento</option>
+                                    <option value={StatusEtapa.CONCLUIDA}>Concluída</option>
                                 </select>
                             </div>
                             <div className="flex flex-col gap-1">
