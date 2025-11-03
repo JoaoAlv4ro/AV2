@@ -172,8 +172,8 @@ function GerenciaEtapas() {
                                     value={novo.prazo} onChange={(e) => setNovo(v => ({ ...v, prazo: e.target.value }))} />
                             </div>
                             <div className="col-span-6 flex justify-end gap-2 mt-2">
-                                <button type="button" onClick={() => setNovoOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">Criar</button>
+                                <button type="button" onClick={() => setNovoOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">Criar</button>
                             </div>
                         </form>
                     </div>
@@ -191,8 +191,8 @@ function GerenciaEtapas() {
                                     selecionada.status === 'PENDENTE' ? 'Pendente' : selecionada.status === 'ANDAMENTO' ? 'Em Andamento' : 'Concluída'
                                 }</span>
                             </div>
-                            <button aria-label="Fechar" onClick={() => setModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded">
-                                <XIcon size={20} />
+                            <button aria-label="Fechar" onClick={() => setModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={24} />
                             </button>
                         </div>
 
@@ -211,7 +211,7 @@ function GerenciaEtapas() {
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="md-status" className="text-sm font-semibold">Status</label>
-                                <select id="md-status" className="p-2 rounded border border-zinc-300 bg-white"
+                                <select id="md-status" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer"
                                     value={selecionada.status}
                                     onChange={(e) => setSelecionada(s => s ? { ...s, status: e.target.value as StatusEtapa } : s)}>
                                     <option value="PENDENTE">Pendente</option>
@@ -228,13 +228,13 @@ function GerenciaEtapas() {
 
                         <div className="flex justify-between">
                             <button onClick={excluir} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 flex items-center gap-2 cursor-pointer">
-                                <TrashIcon size={18} /> Excluir Etapa
+                                <TrashIcon size={24} weight='bold' /> Excluir Etapa
                             </button>
                             <div className="flex gap-2">
                                 <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
                                 <button onClick={() => { salvarEdicao({ nome: selecionada.nome, prazo: selecionada.prazo, status: selecionada.status }); setModalOpen(false); }}
                                     className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 flex items-center gap-2 cursor-pointer">
-                                    <PencilSimpleIcon size={18} /> Salvar
+                                    <PencilSimpleIcon size={24} weight='bold' /> Salvar
                                 </button>
                             </div>
                         </div>
