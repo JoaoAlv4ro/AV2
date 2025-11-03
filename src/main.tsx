@@ -9,6 +9,7 @@ import './index.css'
 import Login from './pages/Login.tsx';
 
 import { AeronaveProvider } from './contexts/data/AeronaveContext.tsx';
+import { FuncionarioProvider } from './contexts/data/FuncionarioContext.tsx';
 import HomeLayout from './components/HomeLayout.tsx';
 import AeronaveLayout from './components/AeronaveLayout.tsx';
 
@@ -50,9 +51,11 @@ const root = document.getElementById('root');
 createRoot(root!).render(
   <AuthProvider>
     <AeronaveProvider>
-      <SidebarProvider>
-        <RouterProvider router={router} />
-      </SidebarProvider>
+      <FuncionarioProvider>
+        <SidebarProvider>
+          <RouterProvider router={router} />
+        </SidebarProvider>
+      </FuncionarioProvider>
     </AeronaveProvider>
   </AuthProvider>
 );
