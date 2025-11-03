@@ -55,10 +55,6 @@ function GerenciaAeronave() {
                         Capacidade:
                         <span className="font-medium text-zinc-950"> {aeronave.capacidade.toLocaleString()} {aeronave.tipo === 'Militar' ? 'tripulantes' : 'passageiros'}</span>
                     </p>
-                    <p className="text-zinc-600">
-                        Tipo:
-                        <span className="font-medium text-zinc-950"> {aeronave.tipo}</span>
-                    </p>
                 </div>
             </div>
 

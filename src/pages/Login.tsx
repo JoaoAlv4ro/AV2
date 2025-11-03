@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { EyeIcon, EyeClosedIcon} from '@phosphor-icons/react'
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 
 function Login() {
     const [usuario, setUsuario] = useState('');
     const [senha, setSenha] = useState('');
+    const [mostrarSenha, setMostrarSenha] = useState(false);
     const [erro, setErro] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e: any) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (login(usuario, senha)) {
+        setErro('');
+        if (login(usuario.trim(), senha)) {
             navigate('/home');
         } else {
             setErro('Usuário ou senha incorretos');
@@ -19,8 +22,8 @@ function Login() {
     };
 
     return (
-        <body className="flex items-center justify-center w-screen h-screen">
-            <form className='bg-zinc-100 items-center flex flex-col gap-3 px-5 py-2.5 rounded-2xl drop-shadow-2xl'>
+        <section className="flex items-center justify-center w-screen h-screen">
+            <form onSubmit={handleSubmit} className='min-w-[400px] bg-zinc-100 items-center flex flex-col gap-3 px-5 py-2.5 rounded-2xl drop-shadow-2xl border border-zinc-300'>
                 <h1 className='text-4xl font-bold'>AEROCODE</h1>
                 <p className=''>Entre para continuar</p>
                 <div className='w-full flex flex-col items-center mb-2 gap-1'>
@@ -36,22 +39,37 @@ function Login() {
 
                 <div className='w-full flex flex-col items-center mb-2 gap-1'>
                     <span className='self-start text-sm font-bold'>Senha</span>
-                    <input
-                        type="password"
-                        placeholder="Senha"
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        className='w-full p-2 pl-4 bg-zinc-200 border border-zinc-300 rounded-lg'
-                    />
+                    <div className='w-full relative'>
+                        <input
+                            type={mostrarSenha ? 'text' : 'password'}
+                            placeholder="Senha"
+                            value={senha}
+                            onChange={(e) => setSenha(e.target.value)}
+                            className='w-full p-2 pl-4 pr-10 bg-zinc-200 border border-zinc-300 rounded-lg'
+                        />
+                        <button
+                            type='button'
+                            aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                            aria-pressed={mostrarSenha ? 'true' : 'false'}
+                            onClick={() => setMostrarSenha((v) => !v)}
+                            className='absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-800 p-1'
+                        >
+                            {mostrarSenha ? (
+                                <EyeClosedIcon size={22} />
+                            ) : (
+                                <EyeIcon size={22} />
+                            )}
+                        </button>
+                    </div>
                 </div>
                 {erro && <p className='text-red-500'>{erro}</p>}
-                <button type="submit" className='w-full bg-sky-500 text-white px-4 py-2 rounded'>
+                <button type="submit" className='w-full bg-blue-500 text-white font-bold px-4 py-2 rounded drop-shadow-2xl cursor-pointer hover:bg-blue-600 transition-colors'>
                     Acessar
                 </button>
 
-                <p className='text-sm'>Não possui uma conta? Contacte sua empresa</p>
+                <p className='text-[10px] text-sky-500'>Não possui uma conta? Contacte sua empresa, (ou use admin e senha)</p>
             </form>
-        </body>
+        </section>
     );
 }
 
