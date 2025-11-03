@@ -74,7 +74,6 @@ function GerenciaPecas() {
         if (!confirm('Deseja excluir esta peça?')) return;
         const novas = pecas.filter(p => p.codigo !== codigo);
         if (!aeronave?.codigo) return;
-        // o tipo de updateAeronave aceita AeronaveFormData (sem pecas), então fazemos cast controlado
         await updateAeronave(aeronave.codigo, { pecas: novas } as any);
     };
 
@@ -83,10 +82,8 @@ function GerenciaPecas() {
         const payload = { ...form, codigo: form.codigo.trim(), nome: form.nome.trim(), fornecedor: form.fornecedor.trim() };
         let novas: PecaItem[];
         if (editCodigo) {
-            // edição
             novas = pecas.map(p => p.codigo === editCodigo ? payload : p);
         } else {
-            // criação: se código existir, substitui
             const existe = pecas.some(p => p.codigo === payload.codigo);
             novas = existe ? pecas.map(p => p.codigo === payload.codigo ? payload : p) : [...pecas, payload];
         }

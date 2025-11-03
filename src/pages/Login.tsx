@@ -11,10 +11,11 @@ function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErro('');
-        if (login(usuario.trim(), senha)) {
+        const ok = await login(usuario.trim(), senha /*, { remember: true } */);
+        if (ok) {
             navigate('/home');
         } else {
             setErro('Usuário ou senha incorretos');
@@ -67,7 +68,7 @@ function Login() {
                     Acessar
                 </button>
 
-                <p className='text-[10px] text-sky-500'>Não possui uma conta? Contacte sua empresa, (ou use admin e senha)</p>
+                <p className='text-[10px] text-sky-500'>Não possui uma conta? Contacte sua empresa (ou use dev/dev)</p>
             </form>
         </section>
     );
