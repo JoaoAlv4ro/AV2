@@ -11,7 +11,7 @@ interface NavbarProps {
 function Navbar({ aeronaveModelo }: NavbarProps) {
     const navigate = useNavigate();
     const { toggle } = useSidebar();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
 
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -65,17 +65,20 @@ function Navbar({ aeronaveModelo }: NavbarProps) {
 
                 {/* Configurações e Perfil do Usuário */}
                 <div ref={menuRef} className="relative flex gap-3 items-center">
-                    <button
-                        className="rounded-sm p-1 hover:bg-zinc-200 cursor-pointer"
+                    <button className="rounded-sm p-1 hover:bg-zinc-200 cursor-pointer"
                         onClick={toggleMenu}
                         aria-haspopup="menu"
                         title="Configurações"
                     >
                         <GearSixIcon size={24} weight="fill" />
                     </button>
-                    <button className="" onClick={() => null}>
-                        [User Image]
-                    </button>
+                    
+                    {/* Avatar com inicial do usuário */}
+                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold cursor-pointer hover:bg-blue-600"
+                        title={user?.nome || 'Usuário'}
+                    >
+                        {user?.nome ? user.nome.charAt(0).toUpperCase() : 'U'}
+                    </div>
 
                     {menuOpen && (
                         <div
