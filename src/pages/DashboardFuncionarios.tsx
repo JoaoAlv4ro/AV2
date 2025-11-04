@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { PencilSimpleIcon, TrashIcon, PlusIcon } from '@phosphor-icons/react';
+import { PencilSimpleIcon, TrashIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
 import { useFuncionarios } from '../contexts/data/FuncionarioContext';
 import { NivelPermissao } from '../types/enums';
 
@@ -21,8 +21,29 @@ function DashboardFuncionarios() {
     const { funcionarios, loading, createFuncionario, updateFuncionario, deleteFuncionario } = useFuncionarios();
 
     const [formOpen, setFormOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const [form, setForm] = useState<FormState>(emptyForm());
+    const [deleteId, setDeleteId] = useState<string>('');
+    const [appearForm, setAppearForm] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
     const isEdit = useMemo(() => Boolean(form.id), [form.id]);
+
+    // Animações de entrada dos modais
+    useEffect(() => {
+        if (formOpen) {
+            const id = requestAnimationFrame(() => setAppearForm(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearForm(false);
+    }, [formOpen]);
+
+    useEffect(() => {
+        if (deleteOpen) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteOpen]);
 
     useEffect(() => {
         if (!formOpen) setForm(emptyForm());
@@ -53,9 +74,16 @@ function DashboardFuncionarios() {
         setFormOpen(true);
     };
 
-    const remove = async (id: string) => {
-        if (confirm('Deseja remover este funcionário?')) {
-            await deleteFuncionario(id);
+    const openDeleteModal = (id: string) => {
+        setDeleteId(id);
+        setDeleteOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (deleteId) {
+            await deleteFuncionario(deleteId);
+            setDeleteOpen(false);
+            setDeleteId('');
         }
     };
 
@@ -72,54 +100,63 @@ function DashboardFuncionarios() {
                 </button>
             </div>
 
-            {/* Formulário */}
+            {/* Formulário Modal */}
             {formOpen && (
-                <form onSubmit={submit} className="bg-zinc-100 border border-zinc-200 rounded-lg p-4 grid grid-cols-6 gap-3">
-                                <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-nome" className="text-sm font-semibold">Nome</label>
-                                    <input id="func-nome" placeholder="Nome" className="p-2 rounded border border-zinc-300 bg-white" value={form.nome}
-                            onChange={(e) => setForm(v => ({ ...v, nome: e.target.value }))} required />
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearForm ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[720px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearForm ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">{isEdit ? 'Editar' : 'Novo'} Funcionário</h3>
+                            <button aria-label="Fechar" onClick={() => setFormOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={submit} className="grid grid-cols-6 gap-3">
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-nome" className="text-sm font-semibold">Nome</label>
+                                <input id="func-nome" placeholder="Nome" className="p-2 rounded border border-zinc-300 bg-white" value={form.nome}
+                                    onChange={(e) => setForm(v => ({ ...v, nome: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-telefone" className="text-sm font-semibold">Telefone</label>
+                                <input id="func-telefone" placeholder="(00) 90000-0000" className="p-2 rounded border border-zinc-300 bg-white" value={form.telefone}
+                                    onChange={(e) => setForm(v => ({ ...v, telefone: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-endereco" className="text-sm font-semibold">Endereço</label>
+                                <input id="func-endereco" placeholder="Endereço" className="p-2 rounded border border-zinc-300 bg-white" value={form.endereco}
+                                    onChange={(e) => setForm(v => ({ ...v, endereco: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-usuario" className="text-sm font-semibold">Usuário</label>
+                                <input id="func-usuario" placeholder="Usuário" className="p-2 rounded border border-zinc-300 bg-white" value={form.usuario}
+                                    onChange={(e) => setForm(v => ({ ...v, usuario: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-senha" className="text-sm font-semibold">Senha</label>
+                                <input id="func-senha" placeholder="Senha" type="password" className="p-2 rounded border border-zinc-300 bg-white" value={form.senha}
+                                    onChange={(e) => setForm(v => ({ ...v, senha: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="func-nivel" className="text-sm font-semibold">Nível de Permissão</label>
+                                <select id="func-nivel" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer" value={form.nivelPermissao}
+                                    onChange={(e) => setForm(v => ({ ...v, nivelPermissao: e.target.value as NivelPermissao }))}
+                                >
+                                    <option value="Administrador">Administrador</option>
+                                    <option value="Engenheiro">Engenheiro</option>
+                                    <option value="Operador">Operador</option>
+                                </select>
+                            </div>
+                            <div className="col-span-6 flex gap-2 justify-end mt-2">
+                                <button type="button" onClick={() => setFormOpen(false)}
+                                    className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit"
+                                    className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
+                                    {isEdit ? 'Salvar' : 'Criar'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-telefone" className="text-sm font-semibold">Telefone</label>
-                                    <input id="func-telefone" placeholder="(00) 90000-0000" className="p-2 rounded border border-zinc-300 bg-white" value={form.telefone}
-                            onChange={(e) => setForm(v => ({ ...v, telefone: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-endereco" className="text-sm font-semibold">Endereço</label>
-                                    <input id="func-endereco" placeholder="Endereço" className="p-2 rounded border border-zinc-300 bg-white" value={form.endereco}
-                            onChange={(e) => setForm(v => ({ ...v, endereco: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-usuario" className="text-sm font-semibold">Usuário</label>
-                                    <input id="func-usuario" placeholder="Usuário" className="p-2 rounded border border-zinc-300 bg-white" value={form.usuario}
-                            onChange={(e) => setForm(v => ({ ...v, usuario: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-senha" className="text-sm font-semibold">Senha</label>
-                                    <input id="func-senha" placeholder="Senha" type="password" className="p-2 rounded border border-zinc-300 bg-white" value={form.senha}
-                            onChange={(e) => setForm(v => ({ ...v, senha: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                                    <label htmlFor="func-nivel" className="text-sm font-semibold">Nível de Permissão</label>
-                                    <select id="func-nivel" className="p-2 rounded border border-zinc-300 bg-white" value={form.nivelPermissao}
-                            onChange={(e) => setForm(v => ({ ...v, nivelPermissao: e.target.value as NivelPermissao }))}
-                        >
-                            <option value="Administrador">Administrador</option>
-                            <option value="Engenheiro">Engenheiro</option>
-                            <option value="Operador">Operador</option>
-                        </select>
-                    </div>
-
-                    <div className="col-span-6 flex gap-2 justify-end mt-2">
-                        <button type="button" onClick={() => setFormOpen(false)}
-                            className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                        <button type="submit"
-                            className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">
-                            {isEdit ? 'Salvar alterações' : 'Cadastrar'}
-                        </button>
-                    </div>
-                </form>
+                </div>
             )}
 
             {/* Estado de carregamento */}
@@ -154,7 +191,7 @@ function DashboardFuncionarios() {
                                             className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
                                             <PencilSimpleIcon size={24} />
                                         </button>
-                                        <button onClick={() => remove(f.id)} title="Remover funcionário" aria-label="Remover funcionário"
+                                        <button onClick={() => openDeleteModal(f.id)} title="Remover funcionário" aria-label="Remover funcionário"
                                             className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
                                             <TrashIcon size={24} />
                                         </button>
@@ -170,6 +207,27 @@ function DashboardFuncionarios() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal Confirmar Exclusão */}
+            {deleteOpen && (
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Funcionário</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">
+                            Tem certeza que deseja excluir o funcionário <span className="font-semibold">{funcionarios.find(f => f.id === deleteId)?.nome}</span>? Esta ação não pode ser desfeita.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button onClick={confirmDelete} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer">Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
