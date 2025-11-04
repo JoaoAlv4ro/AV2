@@ -1,13 +1,39 @@
-import { DownloadSimpleIcon, NotePencilIcon, TrashIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, NotePencilIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { FactoryIcon, PuzzlePieceIcon, TestTubeIcon } from "@phosphor-icons/react";
 import { useParams } from "react-router";
 import { useAeronaves } from "../../contexts/data/AeronaveContext";
+import { useNavigate } from "react-router";
+import { useMemo, useState, type FormEvent } from "react";
+import { TipoAeronave } from "../../types/enums";
 
 function GerenciaAeronave() {
     const { aeronaveId } = useParams();
-    const { getAeronaveById } = useAeronaves();
+    const navigate = useNavigate();
+    const { getAeronaveById, updateAeronave, deleteAeronave } = useAeronaves();
 
     const aeronave = aeronaveId ? getAeronaveById(aeronaveId) : null;
+
+    // Estado para modais
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    type EditForm = { modelo: string; tipo: TipoAeronave; alcance: string; capacidade: string };
+    const [form, setForm] = useState<EditForm>(() => ({
+        modelo: aeronave?.modelo ?? "",
+        tipo: (aeronave?.tipo as TipoAeronave) ?? TipoAeronave.COMERCIAL,
+        alcance: aeronave ? String(aeronave.alcance) : "",
+        capacidade: aeronave ? String(aeronave.capacidade) : "",
+    }));
+
+    // sempre que trocar a aeronave (mudança de rota), atualiza o form
+    useMemo(() => {
+        if (!aeronave) return;
+        setForm({
+            modelo: aeronave.modelo,
+            tipo: aeronave.tipo as TipoAeronave,
+            alcance: String(aeronave.alcance),
+            capacidade: String(aeronave.capacidade),
+        });
+    }, [aeronave]);
 
     if (!aeronave) {
         return (
@@ -35,13 +61,13 @@ function GerenciaAeronave() {
                         </span>
                     </div>
                     <div className="flex gap-3">
-                        <button className="p-2.5 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 cursor-pointer">
+                        <button className="p-2.5 bg-blue-500 text-white rounded flex items-center hover:bg-blue-600 cursor-pointer" onClick={() => setEditOpen(true)} aria-label="Editar aeronave">
                             <NotePencilIcon size={32} weight="bold" />
                         </button>
-                        <button className="p-2.5 bg-zinc-300 rounded flex items-center hover:bg-zinc-400 cursor-pointer">
+                        <button className="p-2.5 bg-zinc-300 rounded flex items-center hover:bg-zinc-400 cursor-pointer" onClick={() => alert('🚧 Funcionalidade: Baixar relatorio em construção (junto ao backend)!')}>
                             <DownloadSimpleIcon size={32} weight="bold" />
                         </button>
-                        <button className="p-2.5 bg-red-300 text-red-950 rounded flex items-center hover:bg-red-400 cursor-pointer">
+                        <button className="p-2.5 bg-red-300 text-red-950 rounded flex items-center hover:bg-red-400 cursor-pointer" onClick={() => setDeleteOpen(true)} aria-label="Excluir aeronave">
                             <TrashIcon size={32} weight="bold" />
                         </button>
                     </div>
@@ -100,6 +126,86 @@ function GerenciaAeronave() {
             
             {/* 🚧 Lista de Equipe (Funcionários associados a todas as etapas desta aeronave.) */}
             <div>🚧 Lista de Equipe Em Construção 🚧</div>
+
+            {/* Modal Editar Aeronave */}
+            {editOpen && aeronave && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Editar Aeronave</h3>
+                            <button aria-label="Fechar" onClick={() => setEditOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form
+                            onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+                                e.preventDefault();
+                                await updateAeronave(aeronave.codigo, {
+                                    modelo: form.modelo.trim(),
+                                    tipo: form.tipo,
+                                    alcance: Number(form.alcance) || 0,
+                                    capacidade: Number(form.capacidade) || 0,
+                                });
+                                setEditOpen(false);
+                            }}
+                            className="grid grid-cols-6 gap-3"
+                        >
+                            <div className="col-span-6 flex flex-col gap-1">
+                                <label htmlFor="ed-modelo" className="text-sm font-semibold">Modelo</label>
+                                <input id="ed-modelo" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.modelo} onChange={(e) => setForm(v => ({ ...v, modelo: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ed-tipo" className="text-sm font-semibold">Tipo</label>
+                                <select id="ed-tipo" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer"
+                                    value={form.tipo} onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoAeronave }))}
+                                >
+                                    <option value={TipoAeronave.COMERCIAL}>Comercial</option>
+                                    <option value={TipoAeronave.MILITAR}>Militar</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ed-alcance" className="text-sm font-semibold">Alcance (km)</label>
+                                <input id="ed-alcance" type="number" min={0} placeholder="Ex: 6500" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.alcance} onChange={(e) => setForm(v => ({ ...v, alcance: e.target.value }))} />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ed-capacidade" className="text-sm font-semibold">Capacidade</label>
+                                <input id="ed-capacidade" type="number" min={0} placeholder="Ex: 180" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.capacidade} onChange={(e) => setForm(v => ({ ...v, capacidade: e.target.value }))} />
+                            </div>
+                            <div className="col-span-6 flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => setEditOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Confirmar Exclusão */}
+            {deleteOpen && aeronave && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Aeronave</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir a aeronave <span className="font-semibold">{aeronave.modelo}</span> ({aeronave.codigo})? Esta ação não pode ser desfeita.</p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button
+                                onClick={async () => { await deleteAeronave(aeronave.codigo); setDeleteOpen(false); navigate('/home'); }}
+                                className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
