@@ -1,14 +1,40 @@
 import { useNavigate } from "react-router";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useAeronaves } from "../contexts/data/AeronaveContext";
+import { useEffect, useState, type FormEvent } from "react";
+import type { AeronaveFormData } from "../types";
+import { TipoAeronave } from "../types/enums";
 
 function DashboardAeronaves() {
     const navigate = useNavigate();
-    const { aeronaves, loading } = useAeronaves();
+    const { aeronaves, loading, createAeronave, error } = useAeronaves();
+
+    // Estado do modal de criação
+    const [open, setOpen] = useState(false);
+    // Estado para animação de entrada do modal (fade + scale + slide)
+    const [appear, setAppear] = useState(false);
+    type FormState = { codigo: string; modelo: string; tipo: TipoAeronave; alcance: string; capacidade: string };
+    const [form, setForm] = useState<FormState>({
+        codigo: "",
+        modelo: "",
+        tipo: TipoAeronave.COMERCIAL,
+        capacidade: "",
+        alcance: "",
+    });
+
+    const resetForm = () => setForm({ codigo: "", modelo: "", tipo: TipoAeronave.COMERCIAL, capacidade: "", alcance: "" });
 
     const aeronaveClick = (codigo: string) => {
         navigate(`../aeronave/${codigo}`)
     };
+
+    useEffect(() => {
+        if (open) {
+            const id = requestAnimationFrame(() => setAppear(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppear(false);
+    }, [open]);
 
     if (loading) {
         return (
@@ -26,7 +52,7 @@ function DashboardAeronaves() {
         <>
             <div className="w-full flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-semibold">Aeronaves</h2>
-                <button className="flex bg-blue-500 text-white p-4  rounded gap-2.5 items-center font-semibold hover:bg-blue-600 cursor-pointer">
+                <button onClick={() => setOpen(true)} className="flex bg-blue-500 text-white p-4  rounded gap-2.5 items-center font-semibold hover:bg-blue-600 cursor-pointer">
                     <PlusIcon size={24} weight="bold" />
                     Adicionar Aeronave
                 </button>
@@ -86,6 +112,75 @@ function DashboardAeronaves() {
                     </div>
                 ))}
             </div>
+
+            {/* Modal Nova Aeronave */}
+            {open && (
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appear ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appear ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Nova Aeronave</h3>
+                            <button aria-label="Fechar" onClick={() => setOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form
+                            onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+                                e.preventDefault();
+                                const payload: AeronaveFormData = {
+                                    codigo: form.codigo.trim(),
+                                    modelo: form.modelo.trim(),
+                                    tipo: form.tipo,
+                                    capacidade: Number(form.capacidade) || 0,
+                                    alcance: Number(form.alcance) || 0,
+                                };
+                                await createAeronave(payload);
+                                setOpen(false);
+                                resetForm();
+                            }}
+                            className="grid grid-cols-6 gap-3"
+                        >
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ar-codigo" className="text-sm font-semibold">Código</label>
+                                <input id="ar-codigo" placeholder="Ex: A320-XYZ" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.codigo} onChange={(e) => setForm(v => ({ ...v, codigo: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-4 flex flex-col gap-1">
+                                <label htmlFor="ar-modelo" className="text-sm font-semibold">Modelo</label>
+                                <input id="ar-modelo" placeholder="Ex: Airbus A320neo" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.modelo} onChange={(e) => setForm(v => ({ ...v, modelo: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ar-tipo" className="text-sm font-semibold">Tipo</label>
+                                <select id="ar-tipo" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer"
+                                    value={form.tipo} onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoAeronave }))}
+                                >
+                                    <option value={TipoAeronave.COMERCIAL}>Comercial</option>
+                                    <option value={TipoAeronave.MILITAR}>Militar</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ar-alcance" className="text-sm font-semibold">Alcance (km)</label>
+                                <input id="ar-alcance" type="number" min={0} placeholder="Ex: 6500" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.alcance} onChange={(e) => setForm(v => ({ ...v, alcance: e.target.value }))} />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="ar-capacidade" className="text-sm font-semibold">Capacidade</label>
+                                <input id="ar-capacidade" type="number" min={0} placeholder="Ex: 180" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.capacidade} onChange={(e) => setForm(v => ({ ...v, capacidade: e.target.value }))} />
+                            </div>
+
+                            {error && (
+                                <div className="col-span-6 text-red-600 text-sm">{error}</div>
+                            )}
+
+                            <div className="col-span-6 flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => { setOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">Cadastrar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

@@ -1,23 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
-
-// Evita depender do enum global com erros; usamos union string local
-export const nivelPermissaoValores = [
-  'Administrador',
-  'Engenheiro',
-  'Operador',
-] as const;
-export type NivelPermissao = typeof nivelPermissaoValores[number];
-
-export interface Funcionario {
-  id: string;
-  nome: string;
-  telefone: string;
-  endereco: string;
-  usuario: string;
-  senha: string;
-  nivelPermissao: NivelPermissao;
-}
+import { createContext, useContext, useMemo, useState, useCallback, type ReactNode, useEffect } from 'react';
+import type { Funcionario } from '../../types';
+import { loadDomainData } from '../../services/mockApi';
 
 interface FuncionarioContextType {
   funcionarios: Funcionario[];
@@ -39,27 +23,8 @@ function loadInitial(): Funcionario[] {
   } catch (err) {
     console.warn('Funcionario storage load error', err);
   }
-  // Mock inicial
-  return [
-    {
-      id: crypto?.randomUUID ? crypto.randomUUID() : '1',
-      nome: 'João Silva',
-      telefone: '(11) 98888-7777',
-      endereco: 'Rua A, 123',
-      usuario: 'joaos',
-      senha: '123456',
-      nivelPermissao: 'Engenheiro',
-    },
-    {
-      id: crypto?.randomUUID ? crypto.randomUUID() : '2',
-      nome: 'Maria Souza',
-      telefone: '(21) 97777-8888',
-      endereco: 'Av. Central, 456',
-      usuario: 'marias',
-      senha: 'abcdef',
-      nivelPermissao: 'Operador',
-    },
-  ];
+  // Sem storage, inicia vazio e carrega do mock via useEffect
+  return [];
 }
 
 export function FuncionarioProvider({ children }: { children: ReactNode }) {
@@ -92,6 +57,30 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, [persist]);
+
+  // Carrega do mock-json apenas se não existir nada no localStorage
+  useEffect(() => {
+    if (funcionarios.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const { funcionarios: loaded } = await loadDomainData();
+        if (!cancelled) {
+          setFuncionarios(loaded);
+          persist(loaded);
+          setError(null);
+        }
+      } catch (e) {
+        console.warn(e);
+        if (!cancelled) setError('Erro ao carregar funcionários');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateFuncionario = useCallback(async (id: string, data: Partial<Omit<Funcionario, 'id'>>) => {
     setLoading(true);

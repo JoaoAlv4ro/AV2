@@ -1,47 +1,80 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { useFuncionarios } from '../../contexts/data/FuncionarioContext';
+import { StatusEtapa } from '../../types/enums';
+import type { Etapa } from '../../types';
 
-type StatusEtapa = 'PENDENTE' | 'ANDAMENTO' | 'CONCLUIDA';
 type AssocFuncionario = { id?: string; nome?: string };
 type EtapaItem = { id: string; nome: string; prazo: string; status: StatusEtapa; funcionarios: AssocFuncionario[] };
 
 function badge(status: StatusEtapa) {
     switch (status) {
-        case 'PENDENTE': return 'bg-zinc-200 text-zinc-700 border border-zinc-300';
-        case 'ANDAMENTO': return 'bg-amber-100 text-amber-800 border border-amber-300';
-        case 'CONCLUIDA': return 'bg-green-100 text-green-800 border border-green-300';
+        case StatusEtapa.PENDENTE: return 'bg-zinc-200 text-zinc-700 border border-zinc-300';
+        case StatusEtapa.ANDAMENTO: return 'bg-amber-100 text-amber-800 border border-amber-300';
+        case StatusEtapa.CONCLUIDA: return 'bg-green-100 text-green-800 border border-green-300';
     }
 }
 
 function GerenciaEtapas() {
     const { aeronaveId } = useParams();
     const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { funcionarios } = useFuncionarios();
     const aeronave = getAeronaveById(aeronaveId || '');
 
     const [novoOpen, setNovoOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [selecionada, setSelecionada] = useState<EtapaItem | null>(null);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [appearNovo, setAppearNovo] = useState(false);
+    const [appearEditar, setAppearEditar] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
 
     const [novo, setNovo] = useState<{ nome: string; prazo: string }>({ nome: '', prazo: '' });
+    const [novoFuncionarioId, setNovoFuncionarioId] = useState<string>('');
 
-        const etapas = useMemo(() => (aeronave?.etapas ?? []) as unknown as EtapaItem[], [aeronave]);
+    const etapas = useMemo(() => (aeronave?.etapas ?? []) as Etapa[], [aeronave]);
 
     const stats = useMemo(() => {
         const total = etapas.length;
-        const pendentes = etapas.filter(e => e.status === 'PENDENTE').length;
-        const progresso = etapas.filter(e => e.status === 'ANDAMENTO').length;
-        const concluidas = etapas.filter(e => e.status === 'CONCLUIDA').length;
+        const pendentes = etapas.filter(e => e.status === StatusEtapa.PENDENTE).length;
+        const progresso = etapas.filter(e => e.status === StatusEtapa.ANDAMENTO).length;
+        const concluidas = etapas.filter(e => e.status === StatusEtapa.CONCLUIDA).length;
         return { total, pendentes, progresso, concluidas };
     }, [etapas]);
 
     const porStatus = useMemo(() => ({
-        PENDENTE: etapas.filter(e => e.status === 'PENDENTE'),
-        ANDAMENTO: etapas.filter(e => e.status === 'ANDAMENTO'),
-        CONCLUIDA: etapas.filter(e => e.status === 'CONCLUIDA'),
+        PENDENTE: etapas.filter(e => e.status === StatusEtapa.PENDENTE),
+        ANDAMENTO: etapas.filter(e => e.status === StatusEtapa.ANDAMENTO),
+        CONCLUIDA: etapas.filter(e => e.status === StatusEtapa.CONCLUIDA),
     }), [etapas]);
+
+    // Animações de entrada dos modais
+    useEffect(() => {
+        if (novoOpen) {
+            const id = requestAnimationFrame(() => setAppearNovo(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearNovo(false);
+    }, [novoOpen]);
+
+    useEffect(() => {
+        if (modalOpen) {
+            const id = requestAnimationFrame(() => setAppearEditar(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearEditar(false);
+    }, [modalOpen]);
+
+    useEffect(() => {
+        if (deleteOpen) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteOpen]);
 
     if (!aeronave) {
         return (
@@ -52,7 +85,7 @@ function GerenciaEtapas() {
     const criarEtapa = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const id = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now());
-        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: 'PENDENTE', funcionarios: [] };
+        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: StatusEtapa.PENDENTE, funcionarios: [] };
         await updateAeronave(aeronave.codigo, { etapas: [...etapas, nova] } as any);
         setNovo({ nome: '', prazo: '' });
         setNovoOpen(false);
@@ -74,12 +107,11 @@ function GerenciaEtapas() {
 
     const excluir = async () => {
         if (!selecionada) return;
-        if (confirm('Deseja remover esta etapa?')) {
-            const novas = etapas.filter(e => e.id !== selecionada.id);
-            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-            setModalOpen(false);
-            setSelecionada(null);
-        }
+        const novas = etapas.filter(e => e.id !== selecionada.id);
+        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+        setDeleteOpen(false);
+        setModalOpen(false);
+        setSelecionada(null);
     };
 
     const Coluna = ({ titulo, status, itens }: { titulo: string; status: StatusEtapa; itens: EtapaItem[] }) => (
@@ -145,18 +177,18 @@ function GerenciaEtapas() {
 
             {/* Kanban */}
             <div className="flex gap-4">
-                <Coluna titulo="Pendente" status="PENDENTE" itens={porStatus.PENDENTE} />
-                <Coluna titulo="Em Andamento" status="ANDAMENTO" itens={porStatus.ANDAMENTO} />
-                <Coluna titulo="Concluída" status="CONCLUIDA" itens={porStatus.CONCLUIDA} />
+                <Coluna titulo="Pendente" status={StatusEtapa.PENDENTE} itens={porStatus.PENDENTE as unknown as EtapaItem[]} />
+                <Coluna titulo="Em Andamento" status={StatusEtapa.ANDAMENTO} itens={porStatus.ANDAMENTO as unknown as EtapaItem[]} />
+                <Coluna titulo="Concluída" status={StatusEtapa.CONCLUIDA} itens={porStatus.CONCLUIDA as unknown as EtapaItem[]} />
             </div>
 
             {/* Modal Nova Etapa */}
             {novoOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearNovo ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearNovo ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Nova Etapa</h3>
-                                        <button aria-label="Fechar" onClick={() => setNovoOpen(false)} className="p-2 hover:bg-zinc-100 rounded">
+                            <button aria-label="Fechar" onClick={() => setNovoOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
                                 <XIcon size={20} />
                             </button>
                         </div>
@@ -182,13 +214,13 @@ function GerenciaEtapas() {
 
             {/* Modal Etapa */}
             {modalOpen && selecionada && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[620px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearEditar ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[620px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearEditar ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-semibold">{selecionada.nome}</h3>
                                 <span className={`text-xs px-2 py-1 rounded ${badge(selecionada.status)}`}>{
-                                    selecionada.status === 'PENDENTE' ? 'Pendente' : selecionada.status === 'ANDAMENTO' ? 'Em Andamento' : 'Concluída'
+                                    selecionada.status === StatusEtapa.PENDENTE ? 'Pendente' : selecionada.status === StatusEtapa.ANDAMENTO ? 'Em Andamento' : 'Concluída'
                                 }</span>
                             </div>
                             <button aria-label="Fechar" onClick={() => setModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -214,20 +246,101 @@ function GerenciaEtapas() {
                                 <select id="md-status" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer"
                                     value={selecionada.status}
                                     onChange={(e) => setSelecionada(s => s ? { ...s, status: e.target.value as StatusEtapa } : s)}>
-                                    <option value="PENDENTE">Pendente</option>
-                                    <option value="ANDAMENTO">Em Andamento</option>
-                                    <option value="CONCLUIDA">Concluída</option>
+                                    <option value={StatusEtapa.PENDENTE}>Pendente</option>
+                                    <option value={StatusEtapa.ANDAMENTO}>Em Andamento</option>
+                                    <option value={StatusEtapa.CONCLUIDA}>Concluída</option>
                                 </select>
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 col-span-2">
                                 <label className="text-sm font-semibold">Funcionários Associados</label>
-                                <input id="md-func-count" disabled placeholder="0" className="p-2 rounded border border-zinc-300 bg-zinc-100"
-                                    value={(selecionada.funcionarios?.length ?? 0).toString()} />
+                                <div className="text-xs text-zinc-500 mb-1">Total: {selecionada.funcionarios?.length ?? 0}</div>
+                                <div className="rounded border border-zinc-300 bg-white max-h-48 overflow-auto">
+                                    {(!selecionada.funcionarios || selecionada.funcionarios.length === 0) ? (
+                                        <div className="p-2 text-sm text-zinc-500">Nenhum funcionário associado.</div>
+                                    ) : (
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-zinc-100 border-b border-zinc-200">
+                                                <tr>
+                                                    <th className="px-2 py-1 text-left font-semibold text-zinc-700">Nome</th>
+                                                    <th className="px-2 py-1 text-left font-semibold text-zinc-700">ID</th>
+                                                    <th className="px-2 py-1 text-right font-semibold text-zinc-700">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selecionada.funcionarios.map((f, idx) => {
+                                                    const full = f.id ? funcionarios.find(x => x.id === f.id) : undefined;
+                                                    const nome = f.nome || full?.nome || '(sem nome)';
+                                                    const id = f.id || full?.id || '-';
+                                                    const key = f.id ?? `${idx}-${nome}`;
+                                                    return (
+                                                        <tr key={key} className="border-t border-zinc-200">
+                                                            <td className="px-2 py-1 text-zinc-800">{nome}</td>
+                                                            <td className="px-2 py-1 text-zinc-600 font-mono text-xs">{id}</td>
+                                                            <td className="px-2 py-1 text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    aria-label="Remover funcionário"
+                                                                    className="inline-flex items-center justify-center p-1.5 rounded hover:bg-red-100 text-red-600 cursor-pointer"
+                                                                    onClick={async () => {
+                                                                        if (!selecionada) return;
+                                                                        const novas = etapas.map(e => e.id === selecionada.id
+                                                                            ? { ...e, funcionarios: (e.funcionarios ?? []).filter((_, i) => i !== idx) }
+                                                                            : e
+                                                                        );
+                                                                        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+                                                                        const atual = novas.find(e => e.id === selecionada.id) || null;
+                                                                        setSelecionada(atual as unknown as EtapaItem);
+                                                                    }}
+                                                                >
+                                                                    <XIcon size={16} />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                                {/* Associar novo funcionário */}
+                                <div className="mt-2 flex items-center gap-2">
+                                    <select
+                                        className="p-2 rounded border border-zinc-300 bg-white min-w-60 cursor-pointer"
+                                        value={novoFuncionarioId}
+                                        onChange={(e) => setNovoFuncionarioId(e.target.value)}
+                                    >
+                                        <option value="">Selecionar funcionário…</option>
+                                        {funcionarios
+                                            .filter(f => !(selecionada.funcionarios ?? []).some(a => a.id === f.id))
+                                            .map(f => (
+                                                <option key={f.id} value={f.id}>{f.nome} ({f.id})</option>
+                                            ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="px-3 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        disabled={!novoFuncionarioId}
+                                        onClick={async () => {
+                                            if (!selecionada || !novoFuncionarioId) return;
+                                            const novas = etapas.map(e => e.id === selecionada.id
+                                                ? { ...e, funcionarios: [ ...(e.funcionarios ?? []), { id: novoFuncionarioId } ] }
+                                                : e
+                                            );
+                                            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+                                            // Atualiza seleção local
+                                            const atual = novas.find(e => e.id === selecionada.id) || null;
+                                            setSelecionada(atual as unknown as EtapaItem);
+                                            setNovoFuncionarioId('');
+                                        }}
+                                    >
+                                        Associar
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div className="flex justify-between">
-                            <button onClick={excluir} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => setDeleteOpen(true)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 flex items-center gap-2 cursor-pointer">
                                 <TrashIcon size={24} weight='bold' /> Excluir Etapa
                             </button>
                             <div className="flex gap-2">
@@ -237,6 +350,25 @@ function GerenciaEtapas() {
                                     <PencilSimpleIcon size={24} weight='bold' /> Salvar
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Confirmar Exclusão de Etapa */}
+            {deleteOpen && selecionada && (
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Etapa</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir a etapa <span className="font-semibold">{selecionada.nome}</span>?</p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button onClick={excluir} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer">Excluir</button>
                         </div>
                     </div>
                 </div>

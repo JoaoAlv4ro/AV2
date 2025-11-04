@@ -1,53 +1,51 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
-import { PlusIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
+import { PlusIcon, PencilSimpleIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { ResultadoTeste, TipoTeste } from '../../types/enums';
+import type { Teste } from '../../types';
 
-type TipoTeste = 'ELETRICO' | 'HIDRAULICO' | 'AERODINAMICO';
-type ResultadoTeste = 'APROVADO' | 'REPROVADO' | 'NAO_REALIZADO';
+type TesteItem = Teste;
 
-type TesteItem = {
-    id: string;
-    tipo: TipoTeste;
-    resultado: ResultadoTeste;
-};
-
-const tipoToLabel: Record<TipoTeste, string> = {
-    ELETRICO: 'Elétrico',
-    HIDRAULICO: 'Hidráulico',
-    AERODINAMICO: 'Aerodinâmico',
-};
-
-const resultadoToLabel: Record<ResultadoTeste, string> = {
-    APROVADO: 'Aprovado',
-    REPROVADO: 'Reprovado',
-    NAO_REALIZADO: 'Não Realizado',
-};
+function nextTesteId(lista: TesteItem[]): string {
+    const max = lista
+        .map(t => t.id)
+        .map(id => {
+            const m = /^T(\d+)$/.exec(id);
+            return m ? parseInt(m[1], 10) : 0;
+        })
+        .reduce((a, b) => Math.max(a, b), 0);
+    const next = (max || 0) + 1;
+    return `T${String(next).padStart(3, '0')}`;
+}
 
 function GerenciaTestes() {
     const { aeronaveId } = useParams();
     const { getAeronaveById, updateAeronave } = useAeronaves();
     const aeronave = getAeronaveById(aeronaveId || '');
 
-    const testes = useMemo(() => (aeronave?.testes ?? []) as unknown as TesteItem[], [aeronave]);
+    const testes = useMemo(() => (aeronave?.testes ?? []) as TesteItem[], [aeronave]);
 
     const [formOpen, setFormOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [appearForm, setAppearForm] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
-    const [form, setForm] = useState<TesteItem>({ id: '', tipo: 'ELETRICO', resultado: 'NAO_REALIZADO' });
+    const [form, setForm] = useState<TesteItem>({ id: '', tipo: TipoTeste.ELETRICO, resultado: ResultadoTeste.NAO_REALIZADO });
     const [tipoFiltro, setTipoFiltro] = useState<TipoTeste | 'TODOS'>('TODOS');
     const [resultadoFiltro, setResultadoFiltro] = useState<ResultadoTeste | 'TODOS'>('TODOS');
 
     const resetForm = () => {
         setEditId(null);
-        setForm({ id: '', tipo: 'ELETRICO', resultado: 'NAO_REALIZADO' });
+    setForm({ id: '', tipo: TipoTeste.ELETRICO, resultado: ResultadoTeste.NAO_REALIZADO });
     };
 
     const stats = useMemo(() => {
-        const total = testes.length;
-        const aprovados = testes.filter(t => t.resultado === 'APROVADO').length;
-        const reprovados = testes.filter(t => t.resultado === 'REPROVADO').length;
-        const naoRealizados = testes.filter(t => t.resultado === 'NAO_REALIZADO').length;
+    const total = testes.length;
+    const aprovados = testes.filter(t => t.resultado === ResultadoTeste.APROVADO).length;
+    const reprovados = testes.filter(t => t.resultado === ResultadoTeste.REPROVADO).length;
+    const naoRealizados = testes.filter(t => t.resultado === ResultadoTeste.NAO_REALIZADO).length;
         return { total, aprovados, reprovados, naoRealizados };
     }, [testes]);
 
@@ -72,16 +70,33 @@ function GerenciaTestes() {
         setFormOpen(true);
     };
 
+    // Animações de entrada dos modais
+    useEffect(() => {
+        if (formOpen) {
+            const id = requestAnimationFrame(() => setAppearForm(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearForm(false);
+    }, [formOpen]);
+
+    useEffect(() => {
+        if (deleteId) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteId]);
+
     const excluir = async (id: string) => {
-        if (!confirm('Deseja excluir este teste?')) return;
         const novos = testes.filter(t => t.id !== id);
         if (!aeronave?.codigo) return;
         await updateAeronave(aeronave.codigo, { testes: novos } as any);
+        setDeleteId(null);
     };
 
     const salvar = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const id = editId ?? (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now()));
+        const id = editId ?? nextTesteId(testes);
         const payload: TesteItem = { id, tipo: form.tipo, resultado: form.resultado };
         const novos = editId
             ? testes.map(t => t.id === editId ? payload : t)
@@ -113,16 +128,16 @@ function GerenciaTestes() {
                     <div className="text-2xl font-bold">{stats.total}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
-                    <div className="text-sm text-zinc-600">Aprovados</div>
-                    <div className="text-2xl font-bold">{stats.aprovados}</div>
+                    <div className="text-sm text-zinc-600">Não Realizados</div>
+                    <div className="text-2xl font-bold">{stats.naoRealizados}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
                     <div className="text-sm text-zinc-600">Reprovados</div>
                     <div className="text-2xl font-bold">{stats.reprovados}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
-                    <div className="text-sm text-zinc-600">Não Realizados</div>
-                    <div className="text-2xl font-bold">{stats.naoRealizados}</div>
+                    <div className="text-sm text-zinc-600">Aprovados</div>
+                    <div className="text-2xl font-bold">{stats.aprovados}</div>
                 </div>
             </div>
 
@@ -134,9 +149,9 @@ function GerenciaTestes() {
                         onChange={(e) => setTipoFiltro(e.target.value as TipoTeste | 'TODOS')}
                     >
                         <option value="TODOS">Todos</option>
-                        <option value="ELETRICO">Elétrico</option>
-                        <option value="HIDRAULICO">Hidráulico</option>
-                        <option value="AERODINAMICO">Aerodinâmico</option>
+                        <option value={TipoTeste.ELETRICO}>Elétrico</option>
+                        <option value={TipoTeste.HIDRAULICO}>Hidráulico</option>
+                        <option value={TipoTeste.AERODINAMICO}>Aerodinâmico</option>
                     </select>
                 </div>
                 <div className="flex items-center gap-2">
@@ -145,9 +160,9 @@ function GerenciaTestes() {
                         onChange={(e) => setResultadoFiltro(e.target.value as ResultadoTeste | 'TODOS')}
                     >
                         <option value="TODOS">Todos</option>
-                        <option value="APROVADO">Aprovado</option>
-                        <option value="REPROVADO">Reprovado</option>
-                        <option value="NAO_REALIZADO">Não Realizado</option>
+                        <option value={ResultadoTeste.APROVADO}>Aprovado</option>
+                        <option value={ResultadoTeste.REPROVADO}>Reprovado</option>
+                        <option value={ResultadoTeste.NAO_REALIZADO}>Não Realizado</option>
                     </select>
                 </div>
             </div>
@@ -158,7 +173,7 @@ function GerenciaTestes() {
                     <thead className="bg-zinc-200">
                         <tr>
                             <th className="px-4 py-2">ID</th>
-                              <th className="px-4 py-2">Tipo</th>
+                            <th className="px-4 py-2">Tipo</th>
                             <th className="px-4 py-2">Resultado</th>
                             <th className="px-4 py-2 text-right">Ações</th>
                         </tr>
@@ -167,14 +182,14 @@ function GerenciaTestes() {
                         {filtrados.map((t) => (
                             <tr key={t.id} className="border-t border-zinc-200 hover:bg-zinc-50">
                                 <td className="px-4 py-2 font-mono text-sm">{t.id}</td>
-                                <td className="px-4 py-2">{tipoToLabel[t.tipo]}</td>
-                                <td className="px-4 py-2">{resultadoToLabel[t.resultado]}</td>
+                                <td className="px-4 py-2">{t.tipo}</td>
+                                <td className="px-4 py-2">{t.resultado}</td>
                                 <td className="px-4 py-2">
                                     <div className="flex gap-2 justify-end">
-                                        <button onClick={() => abrirEdicao(t.id)} className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
+                                        <button onClick={() => abrirEdicao(t.id)} title="Editar teste" aria-label="Editar teste" className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
                                             <PencilSimpleIcon size={24} weight='bold' />
                                         </button>
-                                        <button onClick={() => excluir(t.id)} className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
+                                        <button onClick={() => setDeleteId(t.id)} title="Excluir teste" aria-label="Excluir teste" className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
                                             <TrashIcon size={24} weight='bold' />
                                         </button>
                                     </div>
@@ -190,36 +205,65 @@ function GerenciaTestes() {
                 </table>
             </div>
 
-            {/* Formulário */}
+            {/* Formulário em Modal */}
             {formOpen && (
-                <form onSubmit={salvar} className="bg-zinc-100 border border-zinc-200 rounded-lg p-4 grid grid-cols-6 gap-3">
-                    <div className="col-span-3 flex flex-col gap-1">
-                        <label htmlFor="ts-tipo" className="text-sm font-semibold">Tipo</label>
-                        <select id="ts-tipo" className="p-2 rounded border border-zinc-300 bg-white" value={form.tipo}
-                            onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoTeste }))}
-                        >
-                            <option value="ELETRICO">Elétrico</option>
-                            <option value="HIDRAULICO">Hidráulico</option>
-                            <option value="AERODINAMICO">Aerodinâmico</option>
-                        </select>
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearForm ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearForm ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">{editId ? 'Editar Teste' : 'Novo Teste'}</h3>
+                            <button aria-label="Fechar" onClick={() => { setFormOpen(false); resetForm(); }} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={salvar} className="grid grid-cols-6 gap-3">
+                            <div className="col-span-3 flex flex-col gap-1">
+                                <label htmlFor="ts-tipo" className="text-sm font-semibold">Tipo</label>
+                                <select id="ts-tipo" className="p-2 rounded border border-zinc-300 bg-white" value={form.tipo}
+                                    onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoTeste }))}
+                                >
+                                    <option value={TipoTeste.ELETRICO}>Elétrico</option>
+                                    <option value={TipoTeste.HIDRAULICO}>Hidráulico</option>
+                                    <option value={TipoTeste.AERODINAMICO}>Aerodinâmico</option>
+                                </select>
+                            </div>
+                            <div className="col-span-3 flex flex-col gap-1">
+                                <label htmlFor="ts-res" className="text-sm font-semibold">Resultado</label>
+                                <select id="ts-res" className="p-2 rounded border border-zinc-300 bg-white" value={form.resultado}
+                                    onChange={(e) => setForm(v => ({ ...v, resultado: e.target.value as ResultadoTeste }))}
+                                >
+                                    <option value={ResultadoTeste.NAO_REALIZADO}>Não Realizado</option>
+                                    <option value={ResultadoTeste.APROVADO}>Aprovado</option>
+                                    <option value={ResultadoTeste.REPROVADO}>Reprovado</option>
+                                </select>
+                            </div>
+                            <div className="col-span-6 flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
+                                    {editId ? 'Salvar alterações' : 'Cadastrar Teste'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div className="col-span-3 flex flex-col gap-1">
-                        <label htmlFor="ts-res" className="text-sm font-semibold">Resultado</label>
-                        <select id="ts-res" className="p-2 rounded border border-zinc-300 bg-white" value={form.resultado}
-                            onChange={(e) => setForm(v => ({ ...v, resultado: e.target.value as ResultadoTeste }))}
-                        >
-                            <option value="NAO_REALIZADO">Não Realizado</option>
-                            <option value="APROVADO">Aprovado</option>
-                            <option value="REPROVADO">Reprovado</option>
-                        </select>
+                </div>
+            )}
+
+            {/* Modal Confirmar Exclusão de Teste */}
+            {deleteId && (
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Teste</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteId(null)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir o teste <span className="font-semibold">{deleteId}</span>?</p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button onClick={() => excluir(deleteId)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer">Excluir</button>
+                        </div>
                     </div>
-                    <div className="col-span-6 flex justify-end gap-2 mt-2">
-                        <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">
-                            {editId ? 'Salvar alterações' : 'Cadastrar Teste'}
-                        </button>
-                    </div>
-                </form>
+                </div>
             )}
         </div>
     );

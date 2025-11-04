@@ -1,0 +1,132 @@
+{
+  "funcionarios": [
+    {
+      "id": "F001",
+      "nome": "Ana Souza",
+      "telefone": "(11) 98765-4321",
+      "endereco": "Rua A, 100 - São Paulo/SP",
+      "usuario": "ana",
+      "senha": "123456",
+      "nivelPermissao": "Engenheiro"
+    },
+    {
+      "id": "F002",
+      "nome": "Bruno Lima",
+      "telefone": "(11) 99888-7766",
+      "endereco": "Av. B, 200 - São Paulo/SP",
+      "usuario": "bruno",
+      "senha": "123456",
+      "nivelPermissao": "Operador"
+    },
+    {
+      "id": "F003",
+      "nome": "Carla Mendes",
+      "telefone": "(21) 98888-1122",
+      "endereco": "Rua C, 50 - Rio de Janeiro/RJ",
+      "usuario": "carla",
+      "senha": "123456",
+      "nivelPermissao": "Administrador"
+    },
+    {
+      "id": "F004",
+      "nome": "Diego Santos",
+      "telefone": "(31) 97777-3344",
+      "endereco": "Rua D, 400 - Belo Horizonte/MG",
+      "usuario": "diego",
+      "senha": "123456",
+      "nivelPermissao": "Engenheiro"
+    }
+  ],
+  "aeronaves": [
+    {
+      "codigo": "A320-001",
+      "modelo": "Airbus A320neo",
+      "tipo": "Comercial",
+      "capacidade": 180,
+      "alcance": 6500,
+      "pecas": [
+        { "codigo": "P001", "nome": "Turbina LEAP-1A", "tipo": "Importada", "fornecedor": "CFM International", "status": "Pronta" },
+        { "codigo": "P002", "nome": "Aviônicos", "tipo": "Importada", "fornecedor": "Honeywell", "status": "Em Transporte" },
+        { "codigo": "P003", "nome": "Assentos", "tipo": "Nacional", "fornecedor": "Interiores Brasil", "status": "Pronta" }
+      ],
+      "etapas": [
+        { 
+          "id": "E001", 
+          "nome": "Montagem Estrutural", 
+          "prazo": "2025-11-20", 
+          "status": "Em Andamento",
+          "funcionarios": [
+            { "id": "F001", "nome": "Ana Souza", "telefone": "(11) 98765-4321", "endereco": "Rua A, 100 - São Paulo/SP", "usuario": "ana", "senha": "123456", "nivelPermissao": "Engenheiro" },
+            { "id": "F002", "nome": "Bruno Lima", "telefone": "(11) 99888-7766", "endereco": "Av. B, 200 - São Paulo/SP", "usuario": "bruno", "senha": "123456", "nivelPermissao": "Operador" }
+          ]
+        },
+        { 
+          "id": "E002", 
+          "nome": "Instalação de Sistemas", 
+          "prazo": "2025-12-05", 
+          "status": "Pendente",
+          "funcionarios": [
+            { "id": "F004", "nome": "Diego Santos", "telefone": "(31) 97777-3344", "endereco": "Rua D, 400 - Belo Horizonte/MG", "usuario": "diego", "senha": "123456", "nivelPermissao": "Engenheiro" }
+          ]
+        },
+        { 
+          "id": "E003", 
+          "nome": "Pintura", 
+          "prazo": "2025-12-15", 
+          "status": "Pendente",
+          "funcionarios": []
+        }
+      ],
+      "testes": [
+        { "id": "T001", "tipo": "Elétrico", "resultado": "Aprovado" },
+        { "id": "T002", "tipo": "Hidráulico", "resultado": "Não Realizado" },
+        { "id": "T003", "tipo": "Aerodinâmico", "resultado": "Reprovado" }
+      ]
+    },
+    {
+      "codigo": "F39-101",
+      "modelo": "Saab Gripen E",
+      "tipo": "Militar",
+      "capacidade": 1,
+      "alcance": 3200,
+      "pecas": [
+        { "codigo": "P004", "nome": "Radar AESA", "tipo": "Importada", "fornecedor": "Saab", "status": "Em Produção" },
+        { "codigo": "P005", "nome": "Canopy", "tipo": "Nacional", "fornecedor": "AEL Sistemas", "status": "Em Transporte" },
+        { "codigo": "P006", "nome": "Motor F414G", "tipo": "Importada", "fornecedor": "GE Aviation", "status": "Em Produção" }
+      ],
+      "etapas": [
+        { 
+          "id": "E004", 
+          "nome": "Integração de Armamentos", 
+          "prazo": "2025-11-28", 
+          "status": "Em Andamento",
+          "funcionarios": [
+            { "id": "F001", "nome": "Ana Souza", "telefone": "(11) 98765-4321", "endereco": "Rua A, 100 - São Paulo/SP", "usuario": "ana", "senha": "123456", "nivelPermissao": "Engenheiro" },
+            { "id": "F004", "nome": "Diego Santos", "telefone": "(31) 97777-3344", "endereco": "Rua D, 400 - Belo Horizonte/MG", "usuario": "diego", "senha": "123456", "nivelPermissao": "Engenheiro" }
+          ]
+        },
+        { 
+          "id": "E005", 
+          "nome": "Testes de Voo", 
+          "prazo": "2025-12-22", 
+          "status": "Pendente",
+          "funcionarios": [
+            { "id": "F002", "nome": "Bruno Lima", "telefone": "(11) 99888-7766", "endereco": "Av. B, 200 - São Paulo/SP", "usuario": "bruno", "senha": "123456", "nivelPermissao": "Operador" }
+          ]
+        },
+        { 
+          "id": "E006", 
+          "nome": "Calibração de Radar", 
+          "prazo": "2026-01-10", 
+          "status": "Pendente",
+          "funcionarios": []
+        }
+      ],
+      "testes": [
+        { "id": "T004", "tipo": "Aerodinâmico", "resultado": "Aprovado" },
+        { "id": "T005", "tipo": "Elétrico", "resultado": "Não Realizado" },
+        { "id": "T006", "tipo": "Hidráulico", "resultado": "Aprovado" }
+      ]
+    }
+  ]
+}

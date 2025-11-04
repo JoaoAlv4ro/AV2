@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { PencilSimpleIcon, TrashIcon, PlusIcon } from '@phosphor-icons/react';
 import { useFuncionarios } from '../contexts/data/FuncionarioContext';
+import { NivelPermissao } from '../types/enums';
 
 type FormState = {
     id?: string;
@@ -9,11 +10,11 @@ type FormState = {
     endereco: string;
     usuario: string;
     senha: string;
-    nivelPermissao: 'Administrador' | 'Engenheiro' | 'Operador';
+    nivelPermissao: NivelPermissao;
 };
 
 function emptyForm(): FormState {
-    return { nome: '', telefone: '', endereco: '', usuario: '', senha: '', nivelPermissao: 'Operador' };
+    return { nome: '', telefone: '', endereco: '', usuario: '', senha: '', nivelPermissao: NivelPermissao.OPERADOR };
 }
 
 function DashboardFuncionarios() {
@@ -102,7 +103,7 @@ function DashboardFuncionarios() {
                     <div className="col-span-2 flex flex-col gap-1">
                                     <label htmlFor="func-nivel" className="text-sm font-semibold">Nível de Permissão</label>
                                     <select id="func-nivel" className="p-2 rounded border border-zinc-300 bg-white" value={form.nivelPermissao}
-                            onChange={(e) => setForm(v => ({ ...v, nivelPermissao: e.target.value as FormState['nivelPermissao'] }))}
+                            onChange={(e) => setForm(v => ({ ...v, nivelPermissao: e.target.value as NivelPermissao }))}
                         >
                             <option value="Administrador">Administrador</option>
                             <option value="Engenheiro">Engenheiro</option>
@@ -149,11 +150,11 @@ function DashboardFuncionarios() {
                                 <td className="px-4 py-2">{f.nivelPermissao}</td>
                                 <td className="px-4 py-2">
                                     <div className="flex gap-2 justify-end">
-                                        <button onClick={() => startEdit(f.id)}
+                                        <button onClick={() => startEdit(f.id)} title="Editar funcionário" aria-label="Editar funcionário"
                                             className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
                                             <PencilSimpleIcon size={24} />
                                         </button>
-                                        <button onClick={() => remove(f.id)}
+                                        <button onClick={() => remove(f.id)} title="Remover funcionário" aria-label="Remover funcionário"
                                             className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
                                             <TrashIcon size={24} />
                                         </button>
