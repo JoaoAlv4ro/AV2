@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { useFuncionarios } from '../../contexts/data/FuncionarioContext';
 import { StatusEtapa } from '../../types/enums';
 import type { Etapa } from '../../types';
 
@@ -20,6 +21,7 @@ function badge(status: StatusEtapa) {
 function GerenciaEtapas() {
     const { aeronaveId } = useParams();
     const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { funcionarios } = useFuncionarios();
     const aeronave = getAeronaveById(aeronaveId || '');
 
     const [novoOpen, setNovoOpen] = useState(false);
@@ -31,6 +33,7 @@ function GerenciaEtapas() {
     const [appearDelete, setAppearDelete] = useState(false);
 
     const [novo, setNovo] = useState<{ nome: string; prazo: string }>({ nome: '', prazo: '' });
+    const [novoFuncionarioId, setNovoFuncionarioId] = useState<string>('');
 
     const etapas = useMemo(() => (aeronave?.etapas ?? []) as Etapa[], [aeronave]);
 
@@ -248,10 +251,91 @@ function GerenciaEtapas() {
                                     <option value={StatusEtapa.CONCLUIDA}>Concluída</option>
                                 </select>
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 col-span-2">
                                 <label className="text-sm font-semibold">Funcionários Associados</label>
-                                <input id="md-func-count" disabled placeholder="0" className="p-2 rounded border border-zinc-300 bg-zinc-100"
-                                    value={(selecionada.funcionarios?.length ?? 0).toString()} />
+                                <div className="text-xs text-zinc-500 mb-1">Total: {selecionada.funcionarios?.length ?? 0}</div>
+                                <div className="rounded border border-zinc-300 bg-white max-h-48 overflow-auto">
+                                    {(!selecionada.funcionarios || selecionada.funcionarios.length === 0) ? (
+                                        <div className="p-2 text-sm text-zinc-500">Nenhum funcionário associado.</div>
+                                    ) : (
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-zinc-100 border-b border-zinc-200">
+                                                <tr>
+                                                    <th className="px-2 py-1 text-left font-semibold text-zinc-700">Nome</th>
+                                                    <th className="px-2 py-1 text-left font-semibold text-zinc-700">ID</th>
+                                                    <th className="px-2 py-1 text-right font-semibold text-zinc-700">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selecionada.funcionarios.map((f, idx) => {
+                                                    const full = f.id ? funcionarios.find(x => x.id === f.id) : undefined;
+                                                    const nome = f.nome || full?.nome || '(sem nome)';
+                                                    const id = f.id || full?.id || '-';
+                                                    const key = f.id ?? `${idx}-${nome}`;
+                                                    return (
+                                                        <tr key={key} className="border-t border-zinc-200">
+                                                            <td className="px-2 py-1 text-zinc-800">{nome}</td>
+                                                            <td className="px-2 py-1 text-zinc-600 font-mono text-xs">{id}</td>
+                                                            <td className="px-2 py-1 text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    aria-label="Remover funcionário"
+                                                                    className="inline-flex items-center justify-center p-1.5 rounded hover:bg-red-100 text-red-600 cursor-pointer"
+                                                                    onClick={async () => {
+                                                                        if (!selecionada) return;
+                                                                        const novas = etapas.map(e => e.id === selecionada.id
+                                                                            ? { ...e, funcionarios: (e.funcionarios ?? []).filter((_, i) => i !== idx) }
+                                                                            : e
+                                                                        );
+                                                                        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+                                                                        const atual = novas.find(e => e.id === selecionada.id) || null;
+                                                                        setSelecionada(atual as unknown as EtapaItem);
+                                                                    }}
+                                                                >
+                                                                    <XIcon size={16} />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                                {/* Associar novo funcionário */}
+                                <div className="mt-2 flex items-center gap-2">
+                                    <select
+                                        className="p-2 rounded border border-zinc-300 bg-white min-w-60 cursor-pointer"
+                                        value={novoFuncionarioId}
+                                        onChange={(e) => setNovoFuncionarioId(e.target.value)}
+                                    >
+                                        <option value="">Selecionar funcionário…</option>
+                                        {funcionarios
+                                            .filter(f => !(selecionada.funcionarios ?? []).some(a => a.id === f.id))
+                                            .map(f => (
+                                                <option key={f.id} value={f.id}>{f.nome} ({f.id})</option>
+                                            ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="px-3 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        disabled={!novoFuncionarioId}
+                                        onClick={async () => {
+                                            if (!selecionada || !novoFuncionarioId) return;
+                                            const novas = etapas.map(e => e.id === selecionada.id
+                                                ? { ...e, funcionarios: [ ...(e.funcionarios ?? []), { id: novoFuncionarioId } ] }
+                                                : e
+                                            );
+                                            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+                                            // Atualiza seleção local
+                                            const atual = novas.find(e => e.id === selecionada.id) || null;
+                                            setSelecionada(atual as unknown as EtapaItem);
+                                            setNovoFuncionarioId('');
+                                        }}
+                                    >
+                                        Associar
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
