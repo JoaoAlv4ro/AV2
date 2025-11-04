@@ -109,16 +109,16 @@ function GerenciaTestes() {
                     <div className="text-2xl font-bold">{stats.total}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
-                    <div className="text-sm text-zinc-600">Aprovados</div>
-                    <div className="text-2xl font-bold">{stats.aprovados}</div>
+                    <div className="text-sm text-zinc-600">Não Realizados</div>
+                    <div className="text-2xl font-bold">{stats.naoRealizados}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
                     <div className="text-sm text-zinc-600">Reprovados</div>
                     <div className="text-2xl font-bold">{stats.reprovados}</div>
                 </div>
                 <div className="bg-zinc-100 border border-zinc-200 rounded-lg p-4">
-                    <div className="text-sm text-zinc-600">Não Realizados</div>
-                    <div className="text-2xl font-bold">{stats.naoRealizados}</div>
+                    <div className="text-sm text-zinc-600">Aprovados</div>
+                    <div className="text-2xl font-bold">{stats.aprovados}</div>
                 </div>
             </div>
 
@@ -154,7 +154,7 @@ function GerenciaTestes() {
                     <thead className="bg-zinc-200">
                         <tr>
                             <th className="px-4 py-2">ID</th>
-                              <th className="px-4 py-2">Tipo</th>
+                            <th className="px-4 py-2">Tipo</th>
                             <th className="px-4 py-2">Resultado</th>
                             <th className="px-4 py-2 text-right">Ações</th>
                         </tr>
@@ -186,36 +186,46 @@ function GerenciaTestes() {
                 </table>
             </div>
 
-            {/* Formulário */}
+            {/* Formulário em Modal */}
             {formOpen && (
-                <form onSubmit={salvar} className="bg-zinc-100 border border-zinc-200 rounded-lg p-4 grid grid-cols-6 gap-3">
-                    <div className="col-span-3 flex flex-col gap-1">
-                        <label htmlFor="ts-tipo" className="text-sm font-semibold">Tipo</label>
-                        <select id="ts-tipo" className="p-2 rounded border border-zinc-300 bg-white" value={form.tipo}
-                            onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoTeste }))}
-                        >
-                            <option value={TipoTeste.ELETRICO}>Elétrico</option>
-                            <option value={TipoTeste.HIDRAULICO}>Hidráulico</option>
-                            <option value={TipoTeste.AERODINAMICO}>Aerodinâmico</option>
-                        </select>
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">{editId ? 'Editar Teste' : 'Novo Teste'}</h3>
+                            <button aria-label="Fechar" onClick={() => { setFormOpen(false); resetForm(); }} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={salvar} className="grid grid-cols-6 gap-3">
+                            <div className="col-span-3 flex flex-col gap-1">
+                                <label htmlFor="ts-tipo" className="text-sm font-semibold">Tipo</label>
+                                <select id="ts-tipo" className="p-2 rounded border border-zinc-300 bg-white" value={form.tipo}
+                                    onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoTeste }))}
+                                >
+                                    <option value={TipoTeste.ELETRICO}>Elétrico</option>
+                                    <option value={TipoTeste.HIDRAULICO}>Hidráulico</option>
+                                    <option value={TipoTeste.AERODINAMICO}>Aerodinâmico</option>
+                                </select>
+                            </div>
+                            <div className="col-span-3 flex flex-col gap-1">
+                                <label htmlFor="ts-res" className="text-sm font-semibold">Resultado</label>
+                                <select id="ts-res" className="p-2 rounded border border-zinc-300 bg-white" value={form.resultado}
+                                    onChange={(e) => setForm(v => ({ ...v, resultado: e.target.value as ResultadoTeste }))}
+                                >
+                                    <option value={ResultadoTeste.NAO_REALIZADO}>Não Realizado</option>
+                                    <option value={ResultadoTeste.APROVADO}>Aprovado</option>
+                                    <option value={ResultadoTeste.REPROVADO}>Reprovado</option>
+                                </select>
+                            </div>
+                            <div className="col-span-6 flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
+                                    {editId ? 'Salvar alterações' : 'Cadastrar Teste'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div className="col-span-3 flex flex-col gap-1">
-                        <label htmlFor="ts-res" className="text-sm font-semibold">Resultado</label>
-                        <select id="ts-res" className="p-2 rounded border border-zinc-300 bg-white" value={form.resultado}
-                            onChange={(e) => setForm(v => ({ ...v, resultado: e.target.value as ResultadoTeste }))}
-                        >
-                            <option value={ResultadoTeste.NAO_REALIZADO}>Não Realizado</option>
-                            <option value={ResultadoTeste.APROVADO}>Aprovado</option>
-                            <option value={ResultadoTeste.REPROVADO}>Reprovado</option>
-                        </select>
-                    </div>
-                    <div className="col-span-6 flex justify-end gap-2 mt-2">
-                        <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600">
-                            {editId ? 'Salvar alterações' : 'Cadastrar Teste'}
-                        </button>
-                    </div>
-                </form>
+                </div>
             )}
 
             {/* Modal Confirmar Exclusão de Teste */}
@@ -230,8 +240,8 @@ function GerenciaTestes() {
                         </div>
                         <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir o teste <span className="font-semibold">{deleteId}</span>?</p>
                         <div className="flex justify-end gap-2">
-                            <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
-                            <button onClick={() => excluir(deleteId)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">Excluir</button>
+                            <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button onClick={() => excluir(deleteId)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer">Excluir</button>
                         </div>
                     </div>
                 </div>

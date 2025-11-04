@@ -181,50 +181,60 @@ function GerenciaPecas() {
                 </table>
             </div>
 
-            {/* Formulário (Modal leve inline) */}
+            {/* Formulário em Modal */}
             {formOpen && (
-                <form onSubmit={salvar} className="bg-zinc-100 border border-zinc-200 rounded-lg p-4 grid grid-cols-6 gap-3">
-                    <div className="col-span-2 flex flex-col gap-1">
-                        <label htmlFor="pc-codigo" className="text-sm font-semibold">Código</label>
-                        <input id="pc-codigo" placeholder="Ex: P001" className="p-2 rounded border border-zinc-300 bg-white"
-                            value={form.codigo} onChange={(e) => setForm(v => ({ ...v, codigo: e.target.value }))} required disabled={!!editCodigo} />
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[720px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">{editCodigo ? 'Editar Peça' : 'Nova Peça'}</h3>
+                            <button aria-label="Fechar" onClick={() => { setFormOpen(false); resetForm(); }} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={salvar} className="grid grid-cols-6 gap-3">
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="pc-codigo" className="text-sm font-semibold">Código</label>
+                                <input id="pc-codigo" placeholder="Ex: P001" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.codigo} onChange={(e) => setForm(v => ({ ...v, codigo: e.target.value }))} required disabled={!!editCodigo} />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="pc-nome" className="text-sm font-semibold">Nome</label>
+                                <input id="pc-nome" placeholder="Nome da peça" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.nome} onChange={(e) => setForm(v => ({ ...v, nome: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="pc-fornecedor" className="text-sm font-semibold">Fornecedor</label>
+                                <input id="pc-fornecedor" placeholder="Fornecedor" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.fornecedor} onChange={(e) => setForm(v => ({ ...v, fornecedor: e.target.value }))} required />
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="pc-tipo" className="text-sm font-semibold">Tipo</label>
+                                <select id="pc-tipo" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.tipo} onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoPeca }))}
+                                >
+                                    <option value={TipoPeca.NACIONAL}>Nacional</option>
+                                    <option value={TipoPeca.IMPORTADA}>Importada</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2 flex flex-col gap-1">
+                                <label htmlFor="pc-status" className="text-sm font-semibold">Status</label>
+                                <select id="pc-status" className="p-2 rounded border border-zinc-300 bg-white"
+                                    value={form.status} onChange={(e) => setForm(v => ({ ...v, status: e.target.value as StatusPeca }))}
+                                >
+                                    <option value={StatusPeca.EM_PRODUCAO}>Em Produção</option>
+                                    <option value={StatusPeca.EM_TRANSPORTE}>Em Transporte</option>
+                                    <option value={StatusPeca.PRONTA}>Pronta</option>
+                                </select>
+                            </div>
+                            <div className="col-span-6 flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
+                                    {editCodigo ? 'Salvar alterações' : 'Cadastrar Peça'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                        <label htmlFor="pc-nome" className="text-sm font-semibold">Nome</label>
-                        <input id="pc-nome" placeholder="Nome da peça" className="p-2 rounded border border-zinc-300 bg-white"
-                            value={form.nome} onChange={(e) => setForm(v => ({ ...v, nome: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                        <label htmlFor="pc-fornecedor" className="text-sm font-semibold">Fornecedor</label>
-                        <input id="pc-fornecedor" placeholder="Fornecedor" className="p-2 rounded border border-zinc-300 bg-white"
-                            value={form.fornecedor} onChange={(e) => setForm(v => ({ ...v, fornecedor: e.target.value }))} required />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                        <label htmlFor="pc-tipo" className="text-sm font-semibold">Tipo</label>
-                        <select id="pc-tipo" className="p-2 rounded border border-zinc-300 bg-white"
-                            value={form.tipo} onChange={(e) => setForm(v => ({ ...v, tipo: e.target.value as TipoPeca }))}
-                        >
-                            <option value={TipoPeca.NACIONAL}>Nacional</option>
-                            <option value={TipoPeca.IMPORTADA}>Importada</option>
-                        </select>
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                        <label htmlFor="pc-status" className="text-sm font-semibold">Status</label>
-                        <select id="pc-status" className="p-2 rounded border border-zinc-300 bg-white"
-                            value={form.status} onChange={(e) => setForm(v => ({ ...v, status: e.target.value as StatusPeca }))}
-                        >
-                            <option value={StatusPeca.EM_PRODUCAO}>Em Produção</option>
-                            <option value={StatusPeca.EM_TRANSPORTE}>Em Transporte</option>
-                            <option value={StatusPeca.PRONTA}>Pronta</option>
-                        </select>
-                    </div>
-                    <div className="col-span-6 flex justify-end gap-2 mt-2">
-                        <button type="button" onClick={() => { setFormOpen(false); resetForm(); }} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 cursor-pointer">
-                            {editCodigo ? 'Salvar alterações' : 'Cadastrar Peça'}
-                        </button>
-                    </div>
-                </form>
+                </div>
             )}
 
             {/* Modal Confirmar Exclusão de Peça */}

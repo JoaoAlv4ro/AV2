@@ -157,7 +157,7 @@ function GerenciaEtapas() {
                     <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Nova Etapa</h3>
-                                        <button aria-label="Fechar" onClick={() => setNovoOpen(false)} className="p-2 hover:bg-zinc-100 rounded">
+                            <button aria-label="Fechar" onClick={() => setNovoOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
                                 <XIcon size={20} />
                             </button>
                         </div>
