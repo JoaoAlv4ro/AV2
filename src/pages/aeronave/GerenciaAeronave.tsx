@@ -2,14 +2,17 @@ import { DownloadSimpleIcon, NotePencilIcon, TrashIcon, XIcon } from "@phosphor-
 import { FactoryIcon, PuzzlePieceIcon, TestTubeIcon } from "@phosphor-icons/react";
 import { useParams } from "react-router";
 import { useAeronaves } from "../../contexts/data/AeronaveContext";
+import { useFuncionarios } from "../../contexts/data/FuncionarioContext";
 import { useNavigate } from "react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { TipoAeronave } from "../../types/enums";
+import type { Funcionario } from "../../types";
 
 function GerenciaAeronave() {
     const { aeronaveId } = useParams();
     const navigate = useNavigate();
     const { getAeronaveById, updateAeronave, deleteAeronave } = useAeronaves();
+    const { funcionarios } = useFuncionarios();
 
     const aeronave = aeronaveId ? getAeronaveById(aeronaveId) : null;
 
@@ -143,8 +146,62 @@ function GerenciaAeronave() {
 
             <div className="w-full h-px bg-zinc-400" />
             
-            {/* 🚧 Lista de Equipe (Funcionários associados a todas as etapas desta aeronave.) */}
-            <div>🚧 Lista de Equipe Em Construção 🚧</div>
+            {/* Lista de Equipe (Funcionários associados a todas as etapas desta aeronave.) */}
+            {(() => {
+                type AssocFuncionario = { id?: string; nome?: string };
+                // Agrega e retira duplicatas de funcionários
+                const equipe = (() => {
+                    const map = new Map<string, { id?: string; nome: string; nivel?: string }>();
+                    for (const etapa of aeronave.etapas ?? []) {
+                        const assoc = (etapa as { funcionarios?: Array<Funcionario | AssocFuncionario> }).funcionarios ?? [];
+                        if (assoc.length === 0) continue;
+                        for (const f of assoc) {
+                            const fid = (f as Funcionario | AssocFuncionario).id as string | undefined;
+                            const full = fid ? funcionarios.find(x => x.id === fid) : undefined;
+                            const nome = (f as Funcionario | AssocFuncionario)?.nome ?? full?.nome ?? "(sem nome)";
+                            const key = fid ?? `nome:${nome}`;
+                            if (!map.has(key)) {
+                                map.set(key, { id: full?.id ?? fid, nome, nivel: full?.nivelPermissao });
+                            }
+                        }
+                    }
+                    return Array.from(map.values());
+                })();
+
+                return (
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-2xl font-semibold">Equipe</h3>
+                            <div className="text-sm text-zinc-600">Total de funcionários associados: {equipe.length}</div>
+                        </div>
+                        <div className="rounded-lg border border-zinc-200 bg-white overflow-hidden">
+                            {equipe.length === 0 ? (
+                                <div className="p-4 text-zinc-600">Nenhum funcionário associado nas etapas desta aeronave.</div>
+                            ) : (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-zinc-100 border-b border-zinc-200">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left font-semibold text-zinc-700">Nome</th>
+                                            <th className="px-3 py-2 text-left font-semibold text-zinc-700">ID</th>
+                                            <th className="px-3 py-2 text-left font-semibold text-zinc-700">Nível</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {equipe.map((f, idx) => (
+                                            <tr key={f.id ?? `nome-${idx}`} className="border-t border-zinc-200">
+            
+                                                <td className="px-3 py-2 text-zinc-900">{f.nome}</td>
+                                                <td className="px-3 py-2 text-zinc-600 font-mono text-xs">{f.id ?? '-'}</td>
+                                                <td className="px-3 py-2 text-zinc-700">{f.nivel ?? '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Modal Editar Aeronave */}
             {editOpen && aeronave && (
