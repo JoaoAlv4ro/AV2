@@ -25,6 +25,7 @@ function GerenciaEtapas() {
     const [novoOpen, setNovoOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [selecionada, setSelecionada] = useState<EtapaItem | null>(null);
+    const [deleteOpen, setDeleteOpen] = useState(false);
 
     const [novo, setNovo] = useState<{ nome: string; prazo: string }>({ nome: '', prazo: '' });
 
@@ -75,12 +76,11 @@ function GerenciaEtapas() {
 
     const excluir = async () => {
         if (!selecionada) return;
-        if (confirm('Deseja remover esta etapa?')) {
-            const novas = etapas.filter(e => e.id !== selecionada.id);
-            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-            setModalOpen(false);
-            setSelecionada(null);
-        }
+        const novas = etapas.filter(e => e.id !== selecionada.id);
+        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+        setDeleteOpen(false);
+        setModalOpen(false);
+        setSelecionada(null);
     };
 
     const Coluna = ({ titulo, status, itens }: { titulo: string; status: StatusEtapa; itens: EtapaItem[] }) => (
@@ -228,7 +228,7 @@ function GerenciaEtapas() {
                         </div>
 
                         <div className="flex justify-between">
-                            <button onClick={excluir} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => setDeleteOpen(true)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 flex items-center gap-2 cursor-pointer">
                                 <TrashIcon size={24} weight='bold' /> Excluir Etapa
                             </button>
                             <div className="flex gap-2">
@@ -238,6 +238,25 @@ function GerenciaEtapas() {
                                     <PencilSimpleIcon size={24} weight='bold' /> Salvar
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Confirmar Exclusão de Etapa */}
+            {deleteOpen && selecionada && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Etapa</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir a etapa <span className="font-semibold">{selecionada.nome}</span>?</p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteOpen(false)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50 cursor-pointer">Cancelar</button>
+                            <button onClick={excluir} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 cursor-pointer">Excluir</button>
                         </div>
                     </div>
                 </div>

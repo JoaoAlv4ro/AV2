@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
-import { PlusIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
+import { PlusIcon, PencilSimpleIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
 import { ResultadoTeste, TipoTeste } from '../../types/enums';
 import type { Teste } from '../../types';
@@ -28,6 +28,7 @@ function GerenciaTestes() {
     const testes = useMemo(() => (aeronave?.testes ?? []) as TesteItem[], [aeronave]);
 
     const [formOpen, setFormOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editId, setEditId] = useState<string | null>(null);
     const [form, setForm] = useState<TesteItem>({ id: '', tipo: TipoTeste.ELETRICO, resultado: ResultadoTeste.NAO_REALIZADO });
     const [tipoFiltro, setTipoFiltro] = useState<TipoTeste | 'TODOS'>('TODOS');
@@ -68,10 +69,10 @@ function GerenciaTestes() {
     };
 
     const excluir = async (id: string) => {
-        if (!confirm('Deseja excluir este teste?')) return;
         const novos = testes.filter(t => t.id !== id);
         if (!aeronave?.codigo) return;
         await updateAeronave(aeronave.codigo, { testes: novos } as any);
+        setDeleteId(null);
     };
 
     const salvar = async (e: FormEvent<HTMLFormElement>) => {
@@ -169,7 +170,7 @@ function GerenciaTestes() {
                                         <button onClick={() => abrirEdicao(t.id)} title="Editar teste" aria-label="Editar teste" className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
                                             <PencilSimpleIcon size={24} weight='bold' />
                                         </button>
-                                        <button onClick={() => excluir(t.id)} title="Excluir teste" aria-label="Excluir teste" className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
+                                        <button onClick={() => setDeleteId(t.id)} title="Excluir teste" aria-label="Excluir teste" className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
                                             <TrashIcon size={24} weight='bold' />
                                         </button>
                                     </div>
@@ -215,6 +216,25 @@ function GerenciaTestes() {
                         </button>
                     </div>
                 </form>
+            )}
+
+            {/* Modal Confirmar Exclusão de Teste */}
+            {deleteId && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xl font-semibold">Excluir Teste</h3>
+                            <button aria-label="Fechar" onClick={() => setDeleteId(null)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir o teste <span className="font-semibold">{deleteId}</span>?</p>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setDeleteId(null)} className="px-4 py-2 rounded border border-zinc-300 bg-white hover:bg-zinc-50">Cancelar</button>
+                            <button onClick={() => excluir(deleteId)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600">Excluir</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
