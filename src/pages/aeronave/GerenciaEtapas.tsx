@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
@@ -26,6 +26,9 @@ function GerenciaEtapas() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selecionada, setSelecionada] = useState<EtapaItem | null>(null);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [appearNovo, setAppearNovo] = useState(false);
+    const [appearEditar, setAppearEditar] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
 
     const [novo, setNovo] = useState<{ nome: string; prazo: string }>({ nome: '', prazo: '' });
 
@@ -44,6 +47,31 @@ function GerenciaEtapas() {
         ANDAMENTO: etapas.filter(e => e.status === StatusEtapa.ANDAMENTO),
         CONCLUIDA: etapas.filter(e => e.status === StatusEtapa.CONCLUIDA),
     }), [etapas]);
+
+    // Animações de entrada dos modais
+    useEffect(() => {
+        if (novoOpen) {
+            const id = requestAnimationFrame(() => setAppearNovo(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearNovo(false);
+    }, [novoOpen]);
+
+    useEffect(() => {
+        if (modalOpen) {
+            const id = requestAnimationFrame(() => setAppearEditar(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearEditar(false);
+    }, [modalOpen]);
+
+    useEffect(() => {
+        if (deleteOpen) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteOpen]);
 
     if (!aeronave) {
         return (
@@ -153,8 +181,8 @@ function GerenciaEtapas() {
 
             {/* Modal Nova Etapa */}
             {novoOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearNovo ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearNovo ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Nova Etapa</h3>
                             <button aria-label="Fechar" onClick={() => setNovoOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -183,8 +211,8 @@ function GerenciaEtapas() {
 
             {/* Modal Etapa */}
             {modalOpen && selecionada && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[620px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearEditar ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[620px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearEditar ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-semibold">{selecionada.nome}</h3>
@@ -245,8 +273,8 @@ function GerenciaEtapas() {
 
             {/* Modal Confirmar Exclusão de Etapa */}
             {deleteOpen && selecionada && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Excluir Etapa</h3>
                             <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">

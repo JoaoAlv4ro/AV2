@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useAeronaves } from "../contexts/data/AeronaveContext";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { AeronaveFormData } from "../types";
 import { TipoAeronave } from "../types/enums";
 
@@ -11,6 +11,8 @@ function DashboardAeronaves() {
 
     // Estado do modal de criação
     const [open, setOpen] = useState(false);
+    // Estado para animação de entrada do modal (fade + scale + slide)
+    const [appear, setAppear] = useState(false);
     type FormState = { codigo: string; modelo: string; tipo: TipoAeronave; alcance: string; capacidade: string };
     const [form, setForm] = useState<FormState>({
         codigo: "",
@@ -25,6 +27,14 @@ function DashboardAeronaves() {
     const aeronaveClick = (codigo: string) => {
         navigate(`../aeronave/${codigo}`)
     };
+
+    useEffect(() => {
+        if (open) {
+            const id = requestAnimationFrame(() => setAppear(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppear(false);
+    }, [open]);
 
     if (loading) {
         return (
@@ -105,8 +115,8 @@ function DashboardAeronaves() {
 
             {/* Modal Nova Aeronave */}
             {open && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appear ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appear ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Nova Aeronave</h3>
                             <button aria-label="Fechar" onClick={() => setOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">

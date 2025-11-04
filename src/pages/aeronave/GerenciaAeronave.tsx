@@ -3,7 +3,7 @@ import { FactoryIcon, PuzzlePieceIcon, TestTubeIcon } from "@phosphor-icons/reac
 import { useParams } from "react-router";
 import { useAeronaves } from "../../contexts/data/AeronaveContext";
 import { useNavigate } from "react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { TipoAeronave } from "../../types/enums";
 
 function GerenciaAeronave() {
@@ -16,6 +16,8 @@ function GerenciaAeronave() {
     // Estado para modais
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [appearEdit, setAppearEdit] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
     type EditForm = { modelo: string; tipo: TipoAeronave; alcance: string; capacidade: string };
     const [form, setForm] = useState<EditForm>(() => ({
         modelo: aeronave?.modelo ?? "",
@@ -23,6 +25,23 @@ function GerenciaAeronave() {
         alcance: aeronave ? String(aeronave.alcance) : "",
         capacidade: aeronave ? String(aeronave.capacidade) : "",
     }));
+
+    // Animação de entrada dos modais
+    useEffect(() => {
+        if (editOpen) {
+            const id = requestAnimationFrame(() => setAppearEdit(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearEdit(false);
+    }, [editOpen]);
+
+    useEffect(() => {
+        if (deleteOpen) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteOpen]);
 
     // sempre que trocar a aeronave (mudança de rota), atualiza o form
     useMemo(() => {
@@ -129,8 +148,8 @@ function GerenciaAeronave() {
 
             {/* Modal Editar Aeronave */}
             {editOpen && aeronave && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearEdit ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearEdit ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Editar Aeronave</h3>
                             <button aria-label="Fechar" onClick={() => setEditOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -185,8 +204,8 @@ function GerenciaAeronave() {
 
             {/* Modal Confirmar Exclusão */}
             {deleteOpen && aeronave && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Excluir Aeronave</h3>
                             <button aria-label="Fechar" onClick={() => setDeleteOpen(false)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">

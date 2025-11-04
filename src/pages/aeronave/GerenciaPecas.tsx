@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
@@ -18,6 +18,8 @@ function GerenciaPecas() {
 
     const [formOpen, setFormOpen] = useState(false);
     const [deleteCodigo, setDeleteCodigo] = useState<string | null>(null);
+    const [appearForm, setAppearForm] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
     const [editCodigo, setEditCodigo] = useState<string | null>(null);
     const [form, setForm] = useState<Peca>({ codigo: '', nome: '', tipo: TipoPeca.NACIONAL, fornecedor: '', status: StatusPeca.EM_PRODUCAO });
 
@@ -55,6 +57,23 @@ function GerenciaPecas() {
         setForm({ ...found });
         setFormOpen(true);
     };
+
+    // Animações dos modais
+    useEffect(() => {
+        if (formOpen) {
+            const id = requestAnimationFrame(() => setAppearForm(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearForm(false);
+    }, [formOpen]);
+
+    useEffect(() => {
+        if (deleteCodigo) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteCodigo]);
 
     const excluir = async (codigo: string) => {
         const novas = pecas.filter(p => p.codigo !== codigo);
@@ -183,8 +202,8 @@ function GerenciaPecas() {
 
             {/* Formulário em Modal */}
             {formOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[720px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearForm ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[720px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearForm ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">{editCodigo ? 'Editar Peça' : 'Nova Peça'}</h3>
                             <button aria-label="Fechar" onClick={() => { setFormOpen(false); resetForm(); }} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -239,8 +258,8 @@ function GerenciaPecas() {
 
             {/* Modal Confirmar Exclusão de Peça */}
             {deleteCodigo && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Excluir Peça</h3>
                             <button aria-label="Fechar" onClick={() => setDeleteCodigo(null)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">

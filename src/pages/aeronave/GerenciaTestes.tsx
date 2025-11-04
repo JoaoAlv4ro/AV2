@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, PencilSimpleIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
@@ -29,6 +29,8 @@ function GerenciaTestes() {
 
     const [formOpen, setFormOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [appearForm, setAppearForm] = useState(false);
+    const [appearDelete, setAppearDelete] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
     const [form, setForm] = useState<TesteItem>({ id: '', tipo: TipoTeste.ELETRICO, resultado: ResultadoTeste.NAO_REALIZADO });
     const [tipoFiltro, setTipoFiltro] = useState<TipoTeste | 'TODOS'>('TODOS');
@@ -67,6 +69,23 @@ function GerenciaTestes() {
         setForm({ ...t });
         setFormOpen(true);
     };
+
+    // Animações de entrada dos modais
+    useEffect(() => {
+        if (formOpen) {
+            const id = requestAnimationFrame(() => setAppearForm(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearForm(false);
+    }, [formOpen]);
+
+    useEffect(() => {
+        if (deleteId) {
+            const id = requestAnimationFrame(() => setAppearDelete(true));
+            return () => cancelAnimationFrame(id);
+        }
+        setAppearDelete(false);
+    }, [deleteId]);
 
     const excluir = async (id: string) => {
         const novos = testes.filter(t => t.id !== id);
@@ -188,8 +207,8 @@ function GerenciaTestes() {
 
             {/* Formulário em Modal */}
             {formOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearForm ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[640px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearForm ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">{editId ? 'Editar Teste' : 'Novo Teste'}</h3>
                             <button aria-label="Fechar" onClick={() => { setFormOpen(false); resetForm(); }} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
@@ -230,8 +249,8 @@ function GerenciaTestes() {
 
             {/* Modal Confirmar Exclusão de Teste */}
             {deleteId && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4">
+                <div className={`fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity duration-200 ${appearDelete ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className={`w-[520px] bg-white rounded-lg shadow-lg border border-zinc-200 p-4 transition-all duration-200 ease-out ${appearDelete ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xl font-semibold">Excluir Teste</h3>
                             <button aria-label="Fechar" onClick={() => setDeleteId(null)} className="p-2 hover:bg-zinc-100 rounded cursor-pointer">
