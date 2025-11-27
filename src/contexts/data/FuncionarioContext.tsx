@@ -39,10 +39,7 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
   const createFuncionario = useCallback(async (data: Omit<Funcionario, 'id'>) => {
     setLoading(true);
     try {
-      const novo: Funcionario = {
-        ...data,
-        id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      };
+      const novo = await funcionariosService.create(data);
       setFuncionarios(prev => {
         const next = [...prev, novo];
         persist(next);
@@ -83,8 +80,9 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
   const updateFuncionario = useCallback(async (id: string, data: Partial<Omit<Funcionario, 'id'>>) => {
     setLoading(true);
     try {
+      const updated = await funcionariosService.update(id, data);
       setFuncionarios(prev => {
-        const next = prev.map(f => f.id === id ? { ...f, ...data } : f);
+        const next = prev.map(f => f.id === id ? updated : f);
         persist(next);
         return next;
       });
@@ -100,6 +98,7 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
   const deleteFuncionario = useCallback(async (id: string) => {
     setLoading(true);
     try {
+      await funcionariosService.delete(id);
       setFuncionarios(prev => {
         const next = prev.filter(f => f.id !== id);
         persist(next);
