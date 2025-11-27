@@ -80,7 +80,7 @@ function DashboardAeronaves() {
                                 {aeronave.modelo}
                             </h3>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                aeronave.tipo === 'Militar' 
+                                aeronave.tipo === 'MILITAR' 
                                     ? 'bg-green-100 text-green-800 border border-green-300' 
                                     : 'bg-blue-100 text-blue-800 border border-blue-300'
                             }`}>
@@ -101,7 +101,7 @@ function DashboardAeronaves() {
                             <div className="flex justify-between">
                                 <span className="text-zinc-600">Capacidade</span>
                                 <span className="font-medium">
-                                    {aeronave.capacidade.toLocaleString()} {aeronave.tipo === 'Militar' ? 'tripulantes' : 'passageiros'}
+                                    {aeronave.capacidade.toLocaleString()} {aeronave.tipo === 'MILITAR' ? 'tripulantes' : 'passageiros'}
                                 </span>
                             </div>
                             <div className="flex justify-between">

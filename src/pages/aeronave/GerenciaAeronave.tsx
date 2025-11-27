@@ -75,7 +75,7 @@ function GerenciaAeronave() {
                 <div className="flex justify-between w-full">
                     <div className="flex gap-3 items-center">
                         <h1 className="font-semibold text-4xl">{aeronave.modelo}</h1>
-                        <span className={`px-2 py-1 rounded-2xl inline-flex items-center text-xs font-medium whitespace-nowrap ${aeronave.tipo === 'Militar'
+                        <span className={`px-2 py-1 rounded-2xl inline-flex items-center text-xs font-medium whitespace-nowrap ${aeronave.tipo === 'MILITAR'
                                 ? 'bg-green-100 text-green-800 border border-green-300'
                                 : 'bg-blue-100 text-blue-800 border border-blue-300'
                             }`}>
