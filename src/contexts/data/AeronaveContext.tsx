@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { TipoAeronave } from '../../types/enums';
 import type { Aeronave, AeronaveFormData } from '../../types/index';
-import { loadDomainData } from '../../services/mockApi';
+import { aeronavesService } from '../../services/aeronavesService';
 
 interface AeronaveContextType {
   aeronaves: Aeronave[];
@@ -35,9 +35,9 @@ export function AeronaveProvider({ children }: { children: ReactNode }) {
     async function load() {
       setLoading(true);
       try {
-        const { aeronaves } = await loadDomainData();
+        const listaAeronaves = await aeronavesService.list();
         if (!cancelled) {
-          setAeronaves(aeronaves);
+          setAeronaves(listaAeronaves);
           setError(null);
         }
       } catch (e) {

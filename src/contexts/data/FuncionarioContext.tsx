@@ -1,8 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useState, useCallback, type ReactNode, useEffect } from 'react';
 import type { Funcionario } from '../../types';
-import { loadDomainData } from '../../services/mockApi';
-
+import { funcionariosService } from '../../services/funcionariosService';
 interface FuncionarioContextType {
   funcionarios: Funcionario[];
   loading: boolean;
@@ -60,12 +59,11 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
 
   // Carrega do mock-json apenas se não existir nada no localStorage
   useEffect(() => {
-    if (funcionarios.length > 0) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const { funcionarios: loaded } = await loadDomainData();
+        const loaded = await funcionariosService.list();
         if (!cancelled) {
           setFuncionarios(loaded);
           persist(loaded);
@@ -79,7 +77,7 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateFuncionario = useCallback(async (id: string, data: Partial<Omit<Funcionario, 'id'>>) => {
