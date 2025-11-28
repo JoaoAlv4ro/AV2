@@ -101,7 +101,7 @@ function GerenciaAeronave() {
                     </p>
                     <p className="text-zinc-600">
                         Capacidade:
-                        <span className="font-medium text-zinc-950"> {aeronave.capacidade.toLocaleString()} {aeronave.tipo === 'Militar' ? 'tripulantes' : 'passageiros'}</span>
+                        <span className="font-medium text-zinc-950"> {aeronave.capacidade.toLocaleString()} {aeronave.tipo === 'MILITAR' ? 'tripulantes' : 'passageiros'}</span>
                     </p>
                 </div>
             </div>

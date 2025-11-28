@@ -15,6 +15,8 @@ interface AeronaveContextType {
   createAeronave: (data: AeronaveFormData) => Promise<void>;
   updateAeronave: (codigo: string, data: Partial<AeronaveFormData>) => Promise<void>;
   deleteAeronave: (codigo: string) => Promise<void>;
+  // Local state updates (no API calls)
+  patchAeronaveLocal: (codigo: string, data: Partial<Aeronave>) => void;
   
   // Statistics
   getTotalAeronaves: () => number;
@@ -58,18 +60,11 @@ export function AeronaveProvider({ children }: { children: ReactNode }) {
   const createAeronave = async (data: AeronaveFormData): Promise<void> => {
     setLoading(true);
     try {
-      const newAeronave: Aeronave = {
-        ...data,
-        pecas: [],
-        etapas: [],
-        testes: [],
-        dataCriacao: new Date(),
-        dataUltimaAtualizacao: new Date()
-      };
-      
-      setAeronaves(prev => [...prev, newAeronave]);
+      const created = await aeronavesService.create(data);
+      setAeronaves(prev => [...prev, created]);
       setError(null);
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setError('Erro ao criar aeronave');
     } finally {
       setLoading(false);
@@ -79,15 +74,11 @@ export function AeronaveProvider({ children }: { children: ReactNode }) {
   const updateAeronave = async (codigo: string, data: Partial<AeronaveFormData>): Promise<void> => {
     setLoading(true);
     try {
-      setAeronaves(prev => 
-        prev.map(aeronave => 
-          aeronave.codigo === codigo 
-            ? { ...aeronave, ...data, dataUltimaAtualizacao: new Date() }
-            : aeronave
-        )
-      );
+      const updated = await aeronavesService.update(codigo, data);
+      setAeronaves(prev => prev.map(a => a.codigo === codigo ? updated : a));
       setError(null);
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setError('Erro ao atualizar aeronave');
     } finally {
       setLoading(false);
@@ -97,13 +88,20 @@ export function AeronaveProvider({ children }: { children: ReactNode }) {
   const deleteAeronave = async (codigo: string): Promise<void> => {
     setLoading(true);
     try {
-      setAeronaves(prev => prev.filter(aeronave => aeronave.codigo !== codigo));
+      await aeronavesService.delete(codigo);
+      setAeronaves(prev => prev.filter(a => a.codigo !== codigo));
       setError(null);
-    } catch {
+    } catch (e) {
+      console.warn(e);
       setError('Erro ao deletar aeronave');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Atualiza somente o estado local, sem chamar a API
+  const patchAeronaveLocal = (codigo: string, data: Partial<Aeronave>): void => {
+    setAeronaves(prev => prev.map(a => a.codigo === codigo ? { ...a, ...data } : a));
   };
 
   const getTotalAeronaves = (): number => {
@@ -122,6 +120,7 @@ export function AeronaveProvider({ children }: { children: ReactNode }) {
     createAeronave,
     updateAeronave,
     deleteAeronave,
+    patchAeronaveLocal,
     getTotalAeronaves,
     getAeronavesByTipo
   };
