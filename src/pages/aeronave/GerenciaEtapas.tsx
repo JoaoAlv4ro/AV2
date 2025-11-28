@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { aeronavesService } from '../../services/aeronavesService';
+import { aeronaveEtapasService } from '../../services/aeronaveEtapasService';
 import { useFuncionarios } from '../../contexts/data/FuncionarioContext';
 import { StatusEtapa } from '../../types/enums';
 import type { Etapa } from '../../types';
@@ -20,7 +22,7 @@ function badge(status: StatusEtapa) {
 
 function GerenciaEtapas() {
     const { aeronaveId } = useParams();
-    const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { getAeronaveById, patchAeronaveLocal } = useAeronaves();
     const { funcionarios } = useFuncionarios();
     const aeronave = getAeronaveById(aeronaveId || '');
 
@@ -82,11 +84,13 @@ function GerenciaEtapas() {
         );
     }
 
+    const toNumId = (id: string | number) => (typeof id === 'number' ? id : Number(id));
+
     const criarEtapa = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const id = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now());
-        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: StatusEtapa.PENDENTE, funcionarios: [] };
-        await updateAeronave(aeronave.codigo, { etapas: [...etapas, nova] } as any);
+        await aeronaveEtapasService.create(aeronave.codigo, { nome: novo.nome.trim(), prazo: novo.prazo || undefined, status: StatusEtapa.PENDENTE });
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
         setNovo({ nome: '', prazo: '' });
         setNovoOpen(false);
     };
@@ -98,17 +102,20 @@ function GerenciaEtapas() {
 
     const salvarEdicao = async (payload: Partial<EtapaItem>) => {
         if (!selecionada) return;
-        const novas = etapas.map(e => e.id === selecionada.id ? { ...e, ...payload } : e);
-        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-        // atualizar seleção com último estado
-        const atual = novas.find(e => e.id === selecionada.id) || null;
-        setSelecionada(atual);
+        const etapaNum = toNumId(selecionada.id);
+        await aeronaveEtapasService.update(aeronave.codigo, etapaNum, { nome: payload.nome, prazo: payload.prazo, status: payload.status });
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+        const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+        setSelecionada(atual as EtapaItem);
     };
 
     const excluir = async () => {
         if (!selecionada) return;
-        const novas = etapas.filter(e => e.id !== selecionada.id);
-        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+        const etapaNum = toNumId(selecionada.id);
+        await aeronaveEtapasService.delete(aeronave.codigo, etapaNum);
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
         setDeleteOpen(false);
         setModalOpen(false);
         setSelecionada(null);
@@ -283,13 +290,15 @@ function GerenciaEtapas() {
                                                                     className="inline-flex items-center justify-center p-1.5 rounded hover:bg-red-100 text-red-600 cursor-pointer"
                                                                     onClick={async () => {
                                                                         if (!selecionada) return;
-                                                                        const novas = etapas.map(e => e.id === selecionada.id
-                                                                            ? { ...e, funcionarios: (e.funcionarios ?? []).filter((_, i) => i !== idx) }
-                                                                            : e
-                                                                        );
-                                                                        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-                                                                        const atual = novas.find(e => e.id === selecionada.id) || null;
-                                                                        setSelecionada(atual as unknown as EtapaItem);
+                                                                        const etapaNum = toNumId(selecionada.id);
+                                                                        const full = (selecionada.funcionarios[idx]);
+                                                                        const funcIdStr = full.id ?? funcionarios.find(x => x.nome === full.nome)?.id;
+                                                                        if (!funcIdStr) return;
+                                                                        await aeronaveEtapasService.removeFuncionario(aeronave.codigo, etapaNum, Number(funcIdStr));
+                                                                        const refreshed = await aeronavesService.get(aeronave.codigo);
+                                                                        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+                                                                        const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+                                                                        setSelecionada(atual as EtapaItem);
                                                                     }}
                                                                 >
                                                                     <XIcon size={16} />
@@ -322,14 +331,12 @@ function GerenciaEtapas() {
                                         disabled={!novoFuncionarioId}
                                         onClick={async () => {
                                             if (!selecionada || !novoFuncionarioId) return;
-                                            const novas = etapas.map(e => e.id === selecionada.id
-                                                ? { ...e, funcionarios: [ ...(e.funcionarios ?? []), { id: novoFuncionarioId } ] }
-                                                : e
-                                            );
-                                            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-                                            // Atualiza seleção local
-                                            const atual = novas.find(e => e.id === selecionada.id) || null;
-                                            setSelecionada(atual as unknown as EtapaItem);
+                                            const etapaNum = toNumId(selecionada.id);
+                                            await aeronaveEtapasService.addFuncionario(aeronave.codigo, etapaNum, Number(novoFuncionarioId));
+                                            const refreshed = await aeronavesService.get(aeronave.codigo);
+                                            patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+                                            const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+                                            setSelecionada(atual as EtapaItem);
                                             setNovoFuncionarioId('');
                                         }}
                                     >
