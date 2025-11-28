@@ -39,6 +39,20 @@ function GerenciaEtapas() {
 
     const etapas = useMemo(() => (aeronave?.etapas ?? []) as Etapa[], [aeronave]);
 
+    // Helpers de data: normaliza ISO com hora para `YYYY-MM-DD` e formato legível
+    const toDateInput = (iso?: string) => {
+        if (!iso) return '';
+        // aceita '2025-12-11T10:54:00.050Z' ou '2025-12-11'
+        const d = String(iso);
+        return d.length >= 10 ? d.slice(0, 10) : d;
+    };
+    const toReadableDate = (iso?: string) => {
+        const base = toDateInput(iso);
+        if (!base) return '-';
+        const [y,m,day] = base.split('-');
+        return `${day}/${m}/${y}`; // dd/mm/yyyy
+    };
+
     const stats = useMemo(() => {
         const total = etapas.length;
         const pendentes = etapas.filter(e => e.status === StatusEtapa.PENDENTE).length;
@@ -136,7 +150,7 @@ function GerenciaEtapas() {
                         </div>
                         <div className="flex justify-between text-sm bg-zinc-100 border border-zinc-200 rounded p-2">
                             <span className="text-zinc-600">Prazo</span>
-                            <span className="font-semibold">{e.prazo || '-'}</span>
+                            <span className="font-semibold">{toReadableDate(e.prazo)}</span>
                         </div>
                         <div className="flex justify-between text-sm mt-2">
                             <span className="text-zinc-600">Funcionários Associados</span>
@@ -245,7 +259,7 @@ function GerenciaEtapas() {
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="md-prazo" className="text-sm font-semibold">Prazo</label>
                                 <input id="md-prazo" type="date" className="p-2 rounded border border-zinc-300 bg-white"
-                                    value={selecionada.prazo}
+                                    value={toDateInput(selecionada.prazo)}
                                     onChange={(e) => setSelecionada(s => s ? { ...s, prazo: e.target.value } : s)} />
                             </div>
                             <div className="flex flex-col gap-1">
