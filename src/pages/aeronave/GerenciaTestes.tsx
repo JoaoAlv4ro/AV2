@@ -3,26 +3,24 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, PencilSimpleIcon, TrashIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { aeronaveTestesService } from '../../services/aeronaveTestesService';
+import { aeronavesService } from '../../services/aeronavesService';
 import { ResultadoTeste, TipoTeste } from '../../types/enums';
 import type { Teste } from '../../types';
 
 type TesteItem = Teste;
 
-function nextTesteId(lista: TesteItem[]): string {
-    const max = lista
-        .map(t => t.id)
-        .map(id => {
-            const m = /^T(\d+)$/.exec(id);
-            return m ? parseInt(m[1], 10) : 0;
-        })
-        .reduce((a, b) => Math.max(a, b), 0);
-    const next = (max || 0) + 1;
-    return `T${String(next).padStart(3, '0')}`;
-}
+// Compat: backend usa ID numérico; UI guarda como string
+const toStrId = (id: string | number) => String(id);
+const parseTesteId = (id: string | number) => {
+    if (typeof id === 'number') return id;
+    const m = /^T?(\d+)$/.exec(id);
+    return m ? Number(m[1]) : Number(id);
+};
 
 function GerenciaTestes() {
     const { aeronaveId } = useParams();
-    const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { getAeronaveById, patchAeronaveLocal } = useAeronaves();
     const aeronave = getAeronaveById(aeronaveId || '');
 
     const testes = useMemo(() => (aeronave?.testes ?? []) as TesteItem[], [aeronave]);
@@ -62,10 +60,10 @@ function GerenciaTestes() {
         setFormOpen(true);
     };
 
-    const abrirEdicao = (id: string) => {
-        const t = testes.find(x => x.id === id);
+    const abrirEdicao = (id: string | number) => {
+        const t = testes.find(x => toStrId(x.id) === toStrId(id));
         if (!t) return;
-        setEditId(id);
+        setEditId(toStrId(id));
         setForm({ ...t });
         setFormOpen(true);
     };
@@ -88,21 +86,25 @@ function GerenciaTestes() {
     }, [deleteId]);
 
     const excluir = async (id: string) => {
-        const novos = testes.filter(t => t.id !== id);
         if (!aeronave?.codigo) return;
-        await updateAeronave(aeronave.codigo, { testes: novos } as any);
+        const testeNum = parseTesteId(id);
+        await aeronaveTestesService.delete(aeronave.codigo, testeNum);
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { testes: refreshed.testes } as any);
         setDeleteId(null);
     };
 
     const salvar = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const id = editId ?? nextTesteId(testes);
-        const payload: TesteItem = { id, tipo: form.tipo, resultado: form.resultado };
-        const novos = editId
-            ? testes.map(t => t.id === editId ? payload : t)
-            : [...testes, payload];
         if (!aeronave?.codigo) return;
-        await updateAeronave(aeronave.codigo, { testes: novos } as any);
+        if (editId) {
+            const testeNum = parseTesteId(editId);
+            await aeronaveTestesService.update(aeronave.codigo, testeNum, { tipo: form.tipo, resultado: form.resultado });
+        } else {
+            await aeronaveTestesService.create(aeronave.codigo, { tipo: form.tipo, resultado: form.resultado });
+        }
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { testes: refreshed.testes } as any);
         setFormOpen(false);
         resetForm();
     };
@@ -189,7 +191,7 @@ function GerenciaTestes() {
                                         <button onClick={() => abrirEdicao(t.id)} title="Editar teste" aria-label="Editar teste" className="p-2.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer flex items-center gap-2">
                                             <PencilSimpleIcon size={24} weight='bold' />
                                         </button>
-                                        <button onClick={() => setDeleteId(t.id)} title="Excluir teste" aria-label="Excluir teste" className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
+                                        <button onClick={() => setDeleteId(toStrId(t.id))} title="Excluir teste" aria-label="Excluir teste" className="p-2.5 rounded bg-red-500 text-white hover:bg-red-600 cursor-pointer flex items-center gap-2">
                                             <TrashIcon size={24} weight='bold' />
                                         </button>
                                     </div>
