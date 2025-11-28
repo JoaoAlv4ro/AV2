@@ -68,7 +68,7 @@ function Login() {
                     Acessar
                 </button>
 
-                <p className='text-[10px] text-sky-500'>Não possui uma conta? Contacte sua empresa (ou use dev/dev)</p>
+                <p className='text-[10px] text-sky-500'>Não possui uma conta? Contacte sua empresa</p>
             </form>
         </section>
     );

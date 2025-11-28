@@ -3,12 +3,14 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, PencilSimpleIcon, TrashIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { aeronavePecasService } from '../../services/aeronavePecasService';
+import { aeronavesService } from '../../services/aeronavesService';
 import type { Peca } from '../../types';
 import { StatusPeca, TipoPeca } from '../../types/enums';
 
 function GerenciaPecas() {
     const { aeronaveId } = useParams();
-    const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { getAeronaveById, patchAeronaveLocal } = useAeronaves();
     const aeronave = getAeronaveById(aeronaveId || '');
 
     const pecas = useMemo(() => (aeronave?.pecas ?? []) as Peca[], [aeronave]);
@@ -76,24 +78,35 @@ function GerenciaPecas() {
     }, [deleteCodigo]);
 
     const excluir = async (codigo: string) => {
-        const novas = pecas.filter(p => p.codigo !== codigo);
         if (!aeronave?.codigo) return;
-        await updateAeronave(aeronave.codigo, { pecas: novas } as any);
+        await aeronavePecasService.delete(aeronave.codigo, codigo);
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { pecas: refreshed.pecas } as any);
         setDeleteCodigo(null);
     };
 
     const salvar = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const payload = { ...form, codigo: form.codigo.trim(), nome: form.nome.trim(), fornecedor: form.fornecedor.trim() };
-        let novas: Peca[];
-        if (editCodigo) {
-            novas = pecas.map(p => p.codigo === editCodigo ? payload : p);
-        } else {
-            const existe = pecas.some(p => p.codigo === payload.codigo);
-            novas = existe ? pecas.map(p => p.codigo === payload.codigo ? payload : p) : [...pecas, payload];
-        }
         if (!aeronave?.codigo) return;
-        await updateAeronave(aeronave.codigo, { pecas: novas } as any);
+        const payload = { ...form, codigo: form.codigo.trim(), nome: form.nome.trim(), fornecedor: form.fornecedor.trim() };
+        if (editCodigo) {
+            await aeronavePecasService.update(aeronave.codigo, editCodigo, {
+                nome: payload.nome,
+                tipo: payload.tipo,
+                fornecedor: payload.fornecedor,
+                status: payload.status,
+            });
+        } else {
+            await aeronavePecasService.create(aeronave.codigo, {
+                codigo: payload.codigo,
+                nome: payload.nome,
+                tipo: payload.tipo,
+                fornecedor: payload.fornecedor,
+                status: payload.status,
+            });
+        }
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { pecas: refreshed.pecas } as any);
         setFormOpen(false);
         resetForm();
     };

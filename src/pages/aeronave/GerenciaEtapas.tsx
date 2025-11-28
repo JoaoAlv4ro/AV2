@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router';
 import { PlusIcon, XIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useAeronaves } from '../../contexts/data/AeronaveContext';
+import { aeronavesService } from '../../services/aeronavesService';
+import { aeronaveEtapasService } from '../../services/aeronaveEtapasService';
 import { useFuncionarios } from '../../contexts/data/FuncionarioContext';
 import { StatusEtapa } from '../../types/enums';
 import type { Etapa } from '../../types';
@@ -20,7 +22,7 @@ function badge(status: StatusEtapa) {
 
 function GerenciaEtapas() {
     const { aeronaveId } = useParams();
-    const { getAeronaveById, updateAeronave } = useAeronaves();
+    const { getAeronaveById, patchAeronaveLocal } = useAeronaves();
     const { funcionarios } = useFuncionarios();
     const aeronave = getAeronaveById(aeronaveId || '');
 
@@ -36,6 +38,20 @@ function GerenciaEtapas() {
     const [novoFuncionarioId, setNovoFuncionarioId] = useState<string>('');
 
     const etapas = useMemo(() => (aeronave?.etapas ?? []) as Etapa[], [aeronave]);
+
+    // Helpers de data: normaliza ISO com hora para `YYYY-MM-DD` e formato legível
+    const toDateInput = (iso?: string) => {
+        if (!iso) return '';
+        // aceita '2025-12-11T10:54:00.050Z' ou '2025-12-11'
+        const d = String(iso);
+        return d.length >= 10 ? d.slice(0, 10) : d;
+    };
+    const toReadableDate = (iso?: string) => {
+        const base = toDateInput(iso);
+        if (!base) return '-';
+        const [y,m,day] = base.split('-');
+        return `${day}/${m}/${y}`; // dd/mm/yyyy
+    };
 
     const stats = useMemo(() => {
         const total = etapas.length;
@@ -82,11 +98,13 @@ function GerenciaEtapas() {
         );
     }
 
+    const toNumId = (id: string | number) => (typeof id === 'number' ? id : Number(id));
+
     const criarEtapa = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const id = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now());
-        const nova: EtapaItem = { id, nome: novo.nome.trim(), prazo: novo.prazo, status: StatusEtapa.PENDENTE, funcionarios: [] };
-        await updateAeronave(aeronave.codigo, { etapas: [...etapas, nova] } as any);
+        await aeronaveEtapasService.create(aeronave.codigo, { nome: novo.nome.trim(), prazo: novo.prazo || undefined, status: StatusEtapa.PENDENTE });
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
         setNovo({ nome: '', prazo: '' });
         setNovoOpen(false);
     };
@@ -98,17 +116,20 @@ function GerenciaEtapas() {
 
     const salvarEdicao = async (payload: Partial<EtapaItem>) => {
         if (!selecionada) return;
-        const novas = etapas.map(e => e.id === selecionada.id ? { ...e, ...payload } : e);
-        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-        // atualizar seleção com último estado
-        const atual = novas.find(e => e.id === selecionada.id) || null;
-        setSelecionada(atual);
+        const etapaNum = toNumId(selecionada.id);
+        await aeronaveEtapasService.update(aeronave.codigo, etapaNum, { nome: payload.nome, prazo: payload.prazo, status: payload.status });
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+        const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+        setSelecionada(atual as EtapaItem);
     };
 
     const excluir = async () => {
         if (!selecionada) return;
-        const novas = etapas.filter(e => e.id !== selecionada.id);
-        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
+        const etapaNum = toNumId(selecionada.id);
+        await aeronaveEtapasService.delete(aeronave.codigo, etapaNum);
+        const refreshed = await aeronavesService.get(aeronave.codigo);
+        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
         setDeleteOpen(false);
         setModalOpen(false);
         setSelecionada(null);
@@ -129,7 +150,7 @@ function GerenciaEtapas() {
                         </div>
                         <div className="flex justify-between text-sm bg-zinc-100 border border-zinc-200 rounded p-2">
                             <span className="text-zinc-600">Prazo</span>
-                            <span className="font-semibold">{e.prazo || '-'}</span>
+                            <span className="font-semibold">{toReadableDate(e.prazo)}</span>
                         </div>
                         <div className="flex justify-between text-sm mt-2">
                             <span className="text-zinc-600">Funcionários Associados</span>
@@ -238,7 +259,7 @@ function GerenciaEtapas() {
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="md-prazo" className="text-sm font-semibold">Prazo</label>
                                 <input id="md-prazo" type="date" className="p-2 rounded border border-zinc-300 bg-white"
-                                    value={selecionada.prazo}
+                                    value={toDateInput(selecionada.prazo)}
                                     onChange={(e) => setSelecionada(s => s ? { ...s, prazo: e.target.value } : s)} />
                             </div>
                             <div className="flex flex-col gap-1">
@@ -283,13 +304,15 @@ function GerenciaEtapas() {
                                                                     className="inline-flex items-center justify-center p-1.5 rounded hover:bg-red-100 text-red-600 cursor-pointer"
                                                                     onClick={async () => {
                                                                         if (!selecionada) return;
-                                                                        const novas = etapas.map(e => e.id === selecionada.id
-                                                                            ? { ...e, funcionarios: (e.funcionarios ?? []).filter((_, i) => i !== idx) }
-                                                                            : e
-                                                                        );
-                                                                        await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-                                                                        const atual = novas.find(e => e.id === selecionada.id) || null;
-                                                                        setSelecionada(atual as unknown as EtapaItem);
+                                                                        const etapaNum = toNumId(selecionada.id);
+                                                                        const full = (selecionada.funcionarios[idx]);
+                                                                        const funcIdStr = full.id ?? funcionarios.find(x => x.nome === full.nome)?.id;
+                                                                        if (!funcIdStr) return;
+                                                                        await aeronaveEtapasService.removeFuncionario(aeronave.codigo, etapaNum, Number(funcIdStr));
+                                                                        const refreshed = await aeronavesService.get(aeronave.codigo);
+                                                                        patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+                                                                        const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+                                                                        setSelecionada(atual as EtapaItem);
                                                                     }}
                                                                 >
                                                                     <XIcon size={16} />
@@ -322,14 +345,12 @@ function GerenciaEtapas() {
                                         disabled={!novoFuncionarioId}
                                         onClick={async () => {
                                             if (!selecionada || !novoFuncionarioId) return;
-                                            const novas = etapas.map(e => e.id === selecionada.id
-                                                ? { ...e, funcionarios: [ ...(e.funcionarios ?? []), { id: novoFuncionarioId } ] }
-                                                : e
-                                            );
-                                            await updateAeronave(aeronave.codigo, { etapas: novas } as any);
-                                            // Atualiza seleção local
-                                            const atual = novas.find(e => e.id === selecionada.id) || null;
-                                            setSelecionada(atual as unknown as EtapaItem);
+                                            const etapaNum = toNumId(selecionada.id);
+                                            await aeronaveEtapasService.addFuncionario(aeronave.codigo, etapaNum, Number(novoFuncionarioId));
+                                            const refreshed = await aeronavesService.get(aeronave.codigo);
+                                            patchAeronaveLocal(aeronave.codigo, { etapas: refreshed.etapas } as any);
+                                            const atual = refreshed.etapas.find((e: any) => String(e.id) === String(selecionada.id)) as any;
+                                            setSelecionada(atual as EtapaItem);
                                             setNovoFuncionarioId('');
                                         }}
                                     >

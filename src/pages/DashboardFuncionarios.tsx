@@ -60,7 +60,16 @@ function DashboardFuncionarios() {
             nivelPermissao: form.nivelPermissao,
         };
         if (isEdit && form.id) {
-            await updateFuncionario(form.id, payload);
+            await updateFuncionario(form.id, {
+                    nome: form.nome,
+                    telefone: form.telefone,
+                    endereco: form.endereco,
+                    usuario: form.usuario,
+                    nivelPermissao: form.nivelPermissao,
+                    // senhaNova opcional: só inclua se foi preenchida
+                    ...(form.senha?.trim() ? { senha: form.senha.trim() } : {}),
+                }
+            );
         } else {
             await createFuncionario(payload);
         }
@@ -70,7 +79,8 @@ function DashboardFuncionarios() {
     const startEdit = (id: string) => {
         const f = funcionarios.find(x => x.id === id);
         if (!f) return;
-        setForm({ ...f });
+        // não preenche senha ao editar; campo será opcional
+        setForm({ ...f, senha: '' });
         setFormOpen(true);
     };
 
@@ -132,18 +142,18 @@ function DashboardFuncionarios() {
                                     onChange={(e) => setForm(v => ({ ...v, usuario: e.target.value }))} required />
                             </div>
                             <div className="col-span-2 flex flex-col gap-1">
-                                <label htmlFor="func-senha" className="text-sm font-semibold">Senha</label>
-                                <input id="func-senha" placeholder="Senha" type="password" className="p-2 rounded border border-zinc-300 bg-white" value={form.senha}
-                                    onChange={(e) => setForm(v => ({ ...v, senha: e.target.value }))} required />
+                                <label htmlFor="func-senha" className="text-sm font-semibold">{isEdit ? 'Nova senha (opcional)' : 'Senha'}</label>
+                                <input id="func-senha" placeholder={isEdit ? 'Deixe em branco para manter' : 'Senha'} type="password" className="p-2 rounded border border-zinc-300 bg-white" value={form.senha}
+                                    onChange={(e) => setForm(v => ({ ...v, senha: e.target.value }))} required={!isEdit} />
                             </div>
                             <div className="col-span-2 flex flex-col gap-1">
                                 <label htmlFor="func-nivel" className="text-sm font-semibold">Nível de Permissão</label>
                                 <select id="func-nivel" className="p-2 rounded border border-zinc-300 bg-white cursor-pointer" value={form.nivelPermissao}
                                     onChange={(e) => setForm(v => ({ ...v, nivelPermissao: e.target.value as NivelPermissao }))}
                                 >
-                                    <option value="Administrador">Administrador</option>
-                                    <option value="Engenheiro">Engenheiro</option>
-                                    <option value="Operador">Operador</option>
+                                    <option value={NivelPermissao.ADMINISTRADOR}>Administrador</option>
+                                    <option value={NivelPermissao.ENGENHEIRO}>Engenheiro</option>
+                                    <option value={NivelPermissao.OPERADOR}>Operador</option>
                                 </select>
                             </div>
                             <div className="col-span-6 flex gap-2 justify-end mt-2">

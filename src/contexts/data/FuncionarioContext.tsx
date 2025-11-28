@@ -1,8 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useState, useCallback, type ReactNode, useEffect } from 'react';
 import type { Funcionario } from '../../types';
-import { loadDomainData } from '../../services/mockApi';
-
+import { funcionariosService } from '../../services/funcionariosService';
 interface FuncionarioContextType {
   funcionarios: Funcionario[];
   loading: boolean;
@@ -40,10 +39,7 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
   const createFuncionario = useCallback(async (data: Omit<Funcionario, 'id'>) => {
     setLoading(true);
     try {
-      const novo: Funcionario = {
-        ...data,
-        id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      };
+      const novo = await funcionariosService.create(data);
       setFuncionarios(prev => {
         const next = [...prev, novo];
         persist(next);
@@ -60,12 +56,11 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
 
   // Carrega do mock-json apenas se não existir nada no localStorage
   useEffect(() => {
-    if (funcionarios.length > 0) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const { funcionarios: loaded } = await loadDomainData();
+        const loaded = await funcionariosService.list();
         if (!cancelled) {
           setFuncionarios(loaded);
           persist(loaded);
@@ -79,14 +74,15 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateFuncionario = useCallback(async (id: string, data: Partial<Omit<Funcionario, 'id'>>) => {
     setLoading(true);
     try {
+      const updated = await funcionariosService.update(id, data);
       setFuncionarios(prev => {
-        const next = prev.map(f => f.id === id ? { ...f, ...data } : f);
+        const next = prev.map(f => f.id === id ? updated : f);
         persist(next);
         return next;
       });
@@ -102,6 +98,7 @@ export function FuncionarioProvider({ children }: { children: ReactNode }) {
   const deleteFuncionario = useCallback(async (id: string) => {
     setLoading(true);
     try {
+      await funcionariosService.delete(id);
       setFuncionarios(prev => {
         const next = prev.filter(f => f.id !== id);
         persist(next);
